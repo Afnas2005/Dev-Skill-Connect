@@ -1,143 +1,386 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/navbar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
-import { Code2, Cookie, LayoutDashboard, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    Bell,
+    Code2,
+    Compass,
+    Ellipsis,
+    House,
+    Image as ImageIcon,
+    MessageSquare,
+    Settings,
+    User,
+    UserPlus,
+    Video,
+} from "lucide-react";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/authStore";
+import { useToastStore } from "@/store/toastStore";
+import { cn } from "@/lib/utils";
+import { getFeedPosts } from "@/services/postServices";
+import { searchSkills, sendConnectionRequest } from "@/services/searchServices";
+
+const leftNav = [
+    { href: "/dashboard", label: "Feed", icon: House, active: true },
+    { href: "/profile", label: "My Profile", icon: User },
+    { href: "/skills", label: "My Skills", icon: Code2 },
+    { href: "/search", label: "Explore", icon: Compass },
+    { href: "/messager", label: "Messager", icon: MessageSquare },
+    { href: "/notifications", label: "Notifications", icon: Bell },
+    { href: "/settings", label: "Settings", icon: Settings },
+];
+
+const trending = [
+    { name: "TypeScript", count: "1.2k posts", width: "w-[90%]", color: "bg-[#2b80e0]" },
+    { name: "Next.js 14", count: "850 posts", width: "w-[76%]", color: "bg-[#18b07a]" },
+    { name: "Rust", count: "640 posts", width: "w-[62%]", color: "bg-[#ef9b21]" },
+    { name: "Kubernetes", count: "420 posts", width: "w-[46%]", color: "bg-[#4284f3]" },
+];
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/auth/me");
-        setUser(res.data.user);
-      } catch (err: any) {
-        console.error("Failed to fetch user:", err);
-        setError("Session expired. Redirecting to login...");
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <header className="h-16 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"></header>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-zinc-500">
-            <Spinner size={32} />
-            <p className="text-sm font-medium animate-pulse">Loading workspace...</p>
-          </div>
-        </div>
-      </div>
+    const user = useAuthStore((state) => state.user);
+    const pushToast = useToastStore((state) => state.pushToast);
+    const queryClient = useQueryClient();
+    const feedQuery = useQuery({
+        queryKey: ["posts", "feed", user?.id || "anonymous"],
+        queryFn: getFeedPosts,
+        refetchOnMount: "always",
+    });
+    const suggestionsQuery = useQuery({
+        queryKey: ["suggestions", user?.id || "anonymous"],
+        queryFn: () => searchSkills({}),
+        refetchOnMount: "always",
+    });
+    const connectMutation = useMutation({
+        mutationFn: sendConnectionRequest,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["suggestions"] });
+            queryClient.invalidateQueries({ queryKey: ["search"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            pushToast({
+                type: "success",
+                title: "Connection request sent",
+            });
+        },
+        onError: (error: unknown) => {
+            const message =
+                typeof error === "object" && error && "message" in error
+                    ? String((error as { message?: string }).message)
+                    : "Could not send request";
+            pushToast({
+                type: "error",
+                title: message,
+            });
+        },
+    });
+    const exploreSuggestions = (suggestionsQuery.data?.data || []).filter(
+        (entry) => entry.user.id !== user?.id
     );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/20">
-          <CardContent className="pt-6 flex flex-col items-center text-center gap-4">
-            <Spinner className="text-red-500" />
-            <p className="font-medium text-red-600 dark:text-red-400">{error}</p>
-          </CardContent>
-        </Card>
-      </div>
+    const feedFallbackSuggestions = (feedQuery.data?.data || [])
+        .map((post) => ({
+            user: {
+                id: post.user.id,
+                name: post.user.name,
+                email: post.user.email,
+                profileImage: post.user.profileImage,
+                professionalTitle: post.user.professionalTitle,
+            },
+            connectionStatus: "none" as const,
+        }))
+        .filter((entry) => entry.user.id !== user?.id);
+    const combinedSuggestions = [...exploreSuggestions, ...feedFallbackSuggestions];
+    const dedupedSuggestions = Array.from(
+        new Map(combinedSuggestions.map((entry) => [String(entry.user.id), entry])).values()
     );
-  }
+    const suggestions = dedupedSuggestions.slice(0, 3);
 
-  return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
-      <Navbar userEmail={user?.email} />
+    return (
+        <ProtectedRoute>
+            <div className="h-screen overflow-hidden bg-[#0b1220] text-[#d3def1]">
+                <div className="flex h-screen w-full">
+                    <aside className="sticky top-0 hidden h-screen w-[250px] flex-col border-r border-[#1f2c44] bg-[#101a2e] p-4 lg:flex">
+                        <div className="mb-8 flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2b80e0] text-white">
+                                <Code2 size={18} />
+                            </div>
+                            <p className="text-3xl font-semibold text-[#e8f0ff]">DevConnect</p>
+                        </div>
 
-      <main className="flex-1 container mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Dashboard</h1>
-          <p className="text-zinc-500 dark:text-zinc-400">
-            Welcome to your developer workspace.
-          </p>
-        </div>
+                        <nav className="space-y-1">
+                            {leftNav.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.label}
+                                        href={item.href}
+                                        className={cn(
+                                            "flex items-center gap-3 rounded-xl px-4 py-3 text-lg font-medium transition-colors",
+                                            item.active
+                                                ? "bg-[#1b2c49] text-[#6fb3ff]"
+                                                : "text-[#94a7c7] hover:bg-[#17243b] hover:text-[#d8e6ff]"
+                                        )}
+                                    >
+                                        <Icon size={18} />
+                                        {item.label}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Profile Card */}
-          <Card className="md:col-span-2 lg:col-span-1 shadow-sm transition-all hover:shadow-md">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg dark:bg-indigo-900/40 dark:text-indigo-400">
-                  <ShieldCheck size={20} />
-                </div>
-                <CardTitle className="text-lg">Account Profile</CardTitle>
-              </div>
-              <CardDescription>Your personal credentials</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="rounded-md bg-zinc-100 p-3 dark:bg-zinc-900/50">
-                  <p className="text-xs font-medium text-zinc-500 mb-1 uppercase tracking-wider">Email Address</p>
-                  <p className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                    {user?.email}
-                  </p>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
-                  <Cookie size={18} className="shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium">Secure Session Active</p>
-                    <p className="opacity-90 mt-0.5 text-xs">Auth token is stored securely in an HTTP-only cookie.</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                        <div className="mt-auto rounded-2xl bg-[#16233a] p-4">
+                            <div className="flex items-center gap-3">
+                                <Avatar name={user?.name || user?.email} src={user?.profileImage} />
+                                <div>
+                                    <p className="text-base font-semibold text-[#e6eeff]">
+                                        {user?.name || "Alex Dev"}
+                                    </p>
+                                    <p className="text-sm text-[#93a6c6]">
+                                        @{(user?.email || "alex_fullstack").split("@")[0]}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
 
-          {/* Placeholder Cards for a "SaaS" look */}
-          <Card className="shadow-sm transition-all hover:shadow-md">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-100 text-blue-700 rounded-lg dark:bg-blue-900/40 dark:text-blue-400">
-                  <Code2 size={20} />
-                </div>
-                <CardTitle className="text-lg">Projects</CardTitle>
-              </div>
-              <CardDescription>Manage your codebases</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center py-6 text-center text-zinc-500">
-              <div className="h-12 w-12 rounded-full border-2 border-dashed border-zinc-200 flex items-center justify-center mb-3 dark:border-zinc-800">
-                <Code2 size={24} className="text-zinc-300 dark:text-zinc-700" />
-              </div>
-              <p className="text-sm">No projects found.</p>
-            </CardContent>
-          </Card>
+                    <main className="no-scrollbar h-screen w-full flex-1 overflow-y-auto border-r border-[#1f2c44] p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0 md:p-6">
+                        <div className="mx-auto w-full max-w-[900px]">
+                        <section className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 shadow-sm md:p-5">
+                            <div className="flex items-start gap-3">
+                                <Avatar name={user?.name || user?.email} src={user?.profileImage} />
+                                <div className="w-full space-y-4">
+                                    <div className="h-24 rounded-2xl border border-[#253652] bg-[#0f1b30] px-4 py-3 text-sm text-[#8ea4c8]">
+                                        Share an update on your latest project...
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-5 text-sm font-medium text-[#8da2c4]">
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <ImageIcon size={15} className="text-[#2b80e0]" />
+                                                Photo
+                                            </span>
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <Code2 size={15} className="text-[#11a873]" />
+                                                Code
+                                            </span>
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <Video size={15} className="text-[#9a57f5]" />
+                                                Video
+                                            </span>
+                                        </div>
+                                        <Button
+                                            asChild
+                                            className="h-10 rounded-xl bg-[#2b80e0] px-8 text-white hover:bg-[#236abd]"
+                                        >
+                                            <Link href="/posts/create">Post</Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
 
-          <Card className="shadow-sm transition-all hover:shadow-md">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-purple-100 text-purple-700 rounded-lg dark:bg-purple-900/40 dark:text-purple-400">
-                  <LayoutDashboard size={20} />
+                        <section className="mt-5 space-y-5">
+                            {feedQuery.isLoading ? (
+                                <article className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 text-sm text-[#8ea4c8] shadow-sm md:p-5">
+                                    Loading feed...
+                                </article>
+                            ) : feedQuery.isError ? (
+                                <article className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm md:p-5">
+                                    Failed to load feed posts.
+                                </article>
+                            ) : (feedQuery.data?.data || []).length === 0 ? (
+                                <article className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 text-sm text-[#8ea4c8] shadow-sm md:p-5">
+                                    No published posts yet. Create the first post.
+                                </article>
+                            ) : (
+                                (feedQuery.data?.data || []).map((post) => (
+                                    <article
+                                        key={post._id}
+                                        className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 shadow-sm md:p-5"
+                                    >
+                                        <header className="mb-3 flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar
+                                                    name={post.user.name || post.user.email}
+                                                    src={post.user.profileImage}
+                                                />
+                                                <div>
+                                                    <p className="text-xl font-semibold text-[#e6eeff]">
+                                                        {post.user.name || "Developer"}
+                                                    </p>
+                                                    <p className="text-sm text-[#90a4c6]">
+                                                        {post.user.professionalTitle ||
+                                                            "Full-stack developer"}{" "}
+                                                        -{" "}
+                                                        {new Date(post.createdAt).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Ellipsis size={18} className="text-[#7f96bd]" />
+                                        </header>
+
+                                        {post.content ? (
+                                            <p className="mb-4 whitespace-pre-wrap text-lg leading-8 text-[#bfcee8]">
+                                                {post.content}
+                                            </p>
+                                        ) : null}
+
+                                        {post.codeSnippet ? (
+                                            <div className="mb-4 rounded-2xl border border-[#2a3d5f] bg-[#0b152b] p-4 text-sm text-[#a9bee0]">
+                                                <p className="mb-2 text-xs uppercase tracking-wider text-[#7f97c0]">
+                                                    {post.codeLanguage}
+                                                </p>
+                                                <pre className="whitespace-pre-wrap break-words font-mono">
+                                                    {post.codeSnippet}
+                                                </pre>
+                                            </div>
+                                        ) : null}
+
+                                        {post.screenshots.length > 0 ? (
+                                            <div className="mb-4 grid gap-2 sm:grid-cols-2">
+                                                {post.screenshots.slice(0, 4).map((url) => (
+                                                    <img
+                                                        key={url}
+                                                        src={url}
+                                                        alt="Post screenshot"
+                                                        className="h-40 w-full rounded-xl border border-[#2a3d5f] object-cover"
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : null}
+
+                                        <footer className="flex items-center justify-between text-sm font-medium text-[#8da2c4]">
+                                            <div className="flex items-center gap-6">
+                                                <span>Attachments ({post.attachments.length})</span>
+                                                <span className="capitalize">{post.status}</span>
+                                            </div>
+                                            <span className="inline-flex items-center gap-1">
+                                                <UserPlus size={14} />
+                                                Connect
+                                            </span>
+                                        </footer>
+                                    </article>
+                                ))
+                            )}
+                        </section>
+                        </div>
+                    </main>
+
+                    <aside className="sticky top-0 hidden h-screen w-[360px] overflow-hidden bg-[#0f182a] p-5 xl:block">
+                        <section className="rounded-3xl border border-[#23324d] bg-[#121d33] p-5">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="text-2xl font-semibold text-[#e6eeff]">
+                                    Suggested Connections
+                                </h3>
+                                <Link href="/search" className="text-sm font-semibold text-[#2b80e0]">
+                                    See All
+                                </Link>
+                            </div>
+                            <div className="space-y-4">
+                                {suggestions.map((person) => (
+                                    <div key={person.user.id} className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-3">
+                                            <Link href={`/profile/${person.user.id}`}>
+                                                <Avatar
+                                                    name={person.user.name || person.user.email}
+                                                    src={person.user.profileImage}
+                                                />
+                                            </Link>
+                                            <div>
+                                                <Link
+                                                    href={`/profile/${person.user.id}`}
+                                                    className="text-base font-semibold text-[#e6eeff] hover:text-[#6fb3ff]"
+                                                >
+                                                    {person.user.name || "Developer"}
+                                                </Link>
+                                                <p className="text-xs text-[#8ea4c8]">
+                                                    {person.user.professionalTitle || "Full-stack developer"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="rounded-lg border border-[#2a3d5f] bg-[#15253d] p-2 text-[#6fb3ff] disabled:cursor-not-allowed disabled:opacity-60"
+                                            disabled={
+                                                connectMutation.isPending ||
+                                                person.connectionStatus !== "none"
+                                            }
+                                            onClick={() => connectMutation.mutate(String(person.user.id))}
+                                        >
+                                            {person.connectionStatus === "none" ? (
+                                                <UserPlus size={14} />
+                                            ) : (
+                                                <span className="px-1 text-xs font-semibold">
+                                                    {person.connectionStatus === "pending"
+                                                        ? "Requested"
+                                                        : "Connected"}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </div>
+                                ))}
+                                {suggestionsQuery.isLoading && suggestions.length === 0 ? (
+                                    <p className="text-sm text-[#8ea4c8]">Loading suggestions...</p>
+                                ) : null}
+                                {suggestionsQuery.isError && suggestions.length === 0 ? (
+                                    <p className="text-sm text-[#8ea4c8]">
+                                        Couldn&apos;t load explore users, showing feed suggestions when available.
+                                    </p>
+                                ) : null}
+                                {suggestions.length === 0 ? (
+                                    <p className="text-sm text-[#8ea4c8]">No suggestions right now.</p>
+                                ) : null}
+                            </div>
+                        </section>
+
+                        <section className="mt-4 rounded-3xl border border-[#23324d] bg-[#121d33] p-5">
+                            <h3 className="mb-4 text-2xl font-semibold text-[#e6eeff]">Trending Skills</h3>
+                            <div className="space-y-3">
+                                {trending.map((item) => (
+                                    <div key={item.name}>
+                                        <div className="mb-1 flex items-center justify-between text-sm">
+                                            <span className="font-medium text-[#c1d0e8]">{item.name}</span>
+                                            <span className="text-[#8ea4c8]">{item.count}</span>
+                                        </div>
+                                        <div className="h-1.5 rounded-full bg-[#21324d]">
+                                            <div
+                                                className={cn("h-1.5 rounded-full", item.width, item.color)}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="mt-4 rounded-3xl bg-gradient-to-br from-[#2e82e4] to-[#2b6bd6] p-6 text-white shadow-[0_10px_20px_rgba(45,128,224,0.25)]">
+                            <p className="text-xl font-semibold">Your Week</p>
+                            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <p className="text-blue-100">Profile Views</p>
+                                    <p className="text-4xl font-bold">248</p>
+                                </div>
+                                <div>
+                                    <p className="text-blue-100">Post Reach</p>
+                                    <p className="text-4xl font-bold">1.2k</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                className="mt-5 h-11 w-full rounded-xl bg-white/20 text-sm font-semibold"
+                            >
+                                View Analytics
+                            </button>
+                        </section>
+
+                        <footer className="mt-6 text-center text-xs text-[#8ea4c8]">
+                            <p>About Privacy Terms Help</p>
+                            <p className="mt-2">© 2024 DevConnect Inc.</p>
+                        </footer>
+                    </aside>
                 </div>
-                <CardTitle className="text-lg">Activity</CardTitle>
-              </div>
-              <CardDescription>Recent actions</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center py-6 text-center text-zinc-500">
-              <p className="text-sm">Your activity feed will appear here.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
-  );
+            </div>
+        </ProtectedRoute>
+    );
 }

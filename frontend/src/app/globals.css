@@ -3,23 +3,174 @@
 @theme {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-surface: #1b2230;
+  --color-surface-muted: #20293a;
+  --color-text: #e4ebf7;
+  --color-border: #2c364a;
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: 240 10% 3.9%;
-      --foreground: 0 0% 98%;
-    }
+    --background: 222 29% 14%;
+    --foreground: 216 44% 91%;
+    --neu-surface: #1b2230;
+    --neu-surface-soft: #20293a;
+    --neu-text: #e4ebf7;
+    --neu-shadow-dark: #121722;
+    --neu-shadow-light: #1d2534;
+    --neu-radius: 18px;
+    --neu-shadow: 0 12px 24px rgba(5, 8, 14, 0.55);
+    --neu-shadow-soft: 0 8px 16px rgba(6, 10, 18, 0.45);
+    --neu-shadow-inset: inset 0 2px 8px rgba(7, 10, 16, 0.65);
+    font-size: 14px;
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background: #121722;
+    color: var(--neu-text);
+    font-feature-settings: "ss01" on, "cv03" on;
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  a {
+    transition: color 180ms ease, transform 180ms ease;
+  }
+
+  button,
+  .MuiButton-root {
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: var(--neu-surface-soft) !important;
+    color: var(--neu-text) !important;
+    box-shadow: var(--neu-shadow-soft) !important;
+    transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease !important;
+  }
+
+  button:hover,
+  .MuiButton-root:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(5, 8, 14, 0.6) !important;
+  }
+
+  button:active,
+  .MuiButton-root:active {
+    transform: translateY(0);
+    box-shadow: var(--neu-shadow-inset) !important;
+  }
+
+  input,
+  textarea,
+  select,
+  .MuiOutlinedInput-root {
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: var(--neu-surface) !important;
+    color: var(--neu-text) !important;
+    box-shadow: var(--neu-shadow-inset) !important;
+    transition: box-shadow 220ms ease, transform 220ms ease !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    box-shadow: inset 0 2px 8px rgba(7, 10, 16, 0.7), 0 0 0 2px rgba(121, 156, 207, 0.2) !important;
+  }
+
+  main section,
+  main article,
+  main aside,
+  main .MuiCard-root,
+  header,
+  nav {
+    border: 0 !important;
+    border-radius: var(--neu-radius) !important;
+    background: var(--neu-surface) !important;
+    box-shadow: var(--neu-shadow) !important;
+    overflow: hidden;
+    transition: box-shadow 220ms ease, transform 220ms ease, background-color 220ms ease !important;
+  }
+
+  main section:hover,
+  main article:hover,
+  main aside:hover,
+  main .MuiCard-root:hover {
+    box-shadow: 0 14px 28px rgba(5, 8, 14, 0.65) !important;
+  }
+
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#0"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#1"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#2"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#3"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#4"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#5"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#6"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#7"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#8"],
+  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#9"] {
+    background: var(--neu-surface) !important;
+    box-shadow: var(--neu-shadow-soft) !important;
+  }
+
+  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-white"],
+  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-[#d"],
+  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-[#e"],
+  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-[#f"] {
+    color: var(--neu-text) !important;
+  }
+
+  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-zinc"],
+  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-slate"] {
+    color: var(--neu-text) !important;
+  }
+
+  main * {
+    min-width: 0;
+  }
+
+  main :is(h1, h2, h3, h4, h5, h6, p, span, a, button, label) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+@layer utilities {
+  .neu-surface {
+    background: var(--neu-surface);
+    border-radius: var(--neu-radius);
+    box-shadow: var(--neu-shadow);
+  }
+
+  .neu-soft {
+    background: var(--neu-surface-soft);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow-soft);
+  }
+
+  .neu-inset {
+    background: var(--neu-surface);
+    border-radius: 14px;
+    box-shadow: var(--neu-shadow-inset);
+  }
+
+  .neu-hover {
+    transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+  }
+
+  .neu-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(5, 8, 14, 0.65);
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

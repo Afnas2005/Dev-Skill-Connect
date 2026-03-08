@@ -1,16 +1,19 @@
 import * as React from "react"
+import MuiCard from "@mui/material/Card"
+import MuiCardContent from "@mui/material/CardContent"
 import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-    <div
+    <MuiCard
         ref={ref}
         className={cn(
-            "rounded-lg border border-zinc-200 bg-white text-zinc-950 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50",
+            "neu-surface neu-hover rounded-2xl border-0 text-slate-100",
             className
         )}
+        variant="elevation"
         {...props}
     />
 ))
@@ -22,7 +25,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <div
         ref={ref}
-        className={cn("flex flex-col space-y-1.5 p-6", className)}
+        className={cn("flex flex-col space-y-1.5 px-6 pt-6", className)}
         {...props}
     />
 ))
@@ -35,7 +38,7 @@ const CardTitle = React.forwardRef<
     <h3
         ref={ref}
         className={cn(
-            "text-2xl font-semibold leading-none tracking-tight",
+            "text-2xl font-semibold leading-none tracking-tight text-slate-100",
             className
         )}
         {...props}
@@ -49,7 +52,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <p
         ref={ref}
-        className={cn("text-sm text-zinc-500 dark:text-zinc-400", className)}
+        className={cn("text-sm text-slate-300", className)}
         {...props}
     />
 ))
@@ -59,7 +62,7 @@ const CardContent = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+    <MuiCardContent ref={ref} className={cn("p-6 pt-0", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 

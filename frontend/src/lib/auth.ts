@@ -1,5 +1,3 @@
-// ✅ Token is stored in HTTP-only cookie by server
-// No localStorage - automatic cookie handling via Axios withCredentials: true
 
 import { api } from "./api";
 

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
+import { PageTransition } from "@/components/motion/page-transition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,11 +27,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 selection:bg-zinc-200 dark:selection:bg-zinc-800 flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-[#171d2a] text-[#e4ebf7] antialiased selection:bg-[#2a3448] flex flex-col`}
       >
-        <main className="flex-1 flex flex-col">
-          {children}
-        </main>
+        <Providers>
+          <main className="flex-1 flex flex-col">
+            <PageTransition>{children}</PageTransition>
+          </main>
+        </Providers>
       </body>
     </html>
   );
