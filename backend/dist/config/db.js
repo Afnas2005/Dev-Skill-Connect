@@ -11,10 +11,10 @@ const connectDB = async () => {
         await mongoose_1.default.connect(uri, {
             dbName: "devskill-connect",
         });
-        console.log("[DB] ✅ Connected to MongoDB Atlas");
+        console.log("[DB]  Connected to MongoDB Atlas");
     }
     catch (error) {
-        console.error("[DB] ❌ Connection error:", error.message);
+        console.error("[DB]  Connection error:", error.message);
         process.exit(1);
     }
 };

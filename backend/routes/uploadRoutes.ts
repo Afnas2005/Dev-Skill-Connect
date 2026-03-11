@@ -5,11 +5,13 @@ import {
     uploadPostFiles,
     uploadPostScreenshots,
     uploadSkillAttachments,
+    uploadResume,
 } from "../controllers/uploadController";
 import {
     uploadMultipleImages,
     uploadPostFiles as uploadPostFilesMiddleware,
     uploadPostScreenshots as uploadPostScreenshotsMiddleware,
+    uploadResume as uploadResumeMiddleware,
     uploadSingleImage,
 } from "../middleware/upload";
 
@@ -34,5 +36,6 @@ router.post(
     uploadPostFilesMiddleware,
     uploadPostFiles
 );
+router.post("/resume", authMiddleware, uploadResumeMiddleware, uploadResume);
 
 export default router;

@@ -84,15 +84,10 @@ export function ProfileForm({ initial, loading, onSubmit, onCancel }: ProfileFor
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8">
-            <section className="space-y-2">
-                <h1 className="text-4xl font-semibold text-white">Edit Profile Settings</h1>
-                <p className="text-[#7f98be]">
-                    Update your professional information and how you appear to the community.
-                </p>
-            </section>
-
             <section>
-                <h2 className="mb-3 text-2xl font-semibold text-[#dbeafe]">Profile Picture</h2>
+                <h2 className="mb-3 ml-2 text-2xl font-semibold text-[#dbeafe] md:ml-4">
+                    Profile Picture
+                </h2>
                 <div className="rounded-2xl border border-[#1a365f] bg-[#08162f]/80 p-5">
                     <div className="grid gap-5 lg:grid-cols-[180px_1fr]">
                         <div className="flex flex-col items-center justify-center">
@@ -145,7 +140,9 @@ export function ProfileForm({ initial, loading, onSubmit, onCancel }: ProfileFor
             </section>
 
             <section>
-                <h2 className="mb-3 text-2xl font-semibold text-[#dbeafe]">Profile Background</h2>
+                <h2 className="mb-3 ml-2 text-2xl font-semibold text-[#dbeafe] md:ml-4">
+                    Profile Background
+                </h2>
                 <div className="rounded-2xl border border-[#1a365f] bg-[#08162f]/80 p-5">
                     <div className="space-y-4">
                         <div className="overflow-hidden rounded-xl border border-[#1a365f] bg-[#061227]">
@@ -209,7 +206,9 @@ export function ProfileForm({ initial, loading, onSubmit, onCancel }: ProfileFor
             </section>
 
             <section>
-                <h2 className="mb-3 text-2xl font-semibold text-[#dbeafe]">Professional Information</h2>
+                <h2 className="mb-3 ml-2 text-2xl font-semibold text-[#dbeafe] md:ml-4">
+                    Professional Information
+                </h2>
                 <div className="space-y-4 rounded-2xl border border-[#1a365f] bg-[#08162f]/80 p-5">
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
@@ -264,7 +263,9 @@ export function ProfileForm({ initial, loading, onSubmit, onCancel }: ProfileFor
             </section>
 
             <section>
-                <h2 className="mb-3 text-2xl font-semibold text-[#dbeafe]">Social Profiles</h2>
+                <h2 className="mb-3 ml-2 text-2xl font-semibold text-[#dbeafe] md:ml-4">
+                    Social Profiles
+                </h2>
                 <div className="space-y-3 rounded-2xl border border-[#1a365f] bg-[#08162f]/80 p-5">
                     <div className="relative">
                         <Github

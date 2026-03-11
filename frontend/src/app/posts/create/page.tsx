@@ -3,7 +3,17 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Calendar, Globe, Image as ImageIcon, Link2, List, Paperclip, Plus, Type } from "lucide-react";
+import {
+    Calendar,
+    ChevronLeft,
+    Globe,
+    Image as ImageIcon,
+    Link2,
+    List,
+    Paperclip,
+    Plus,
+    Type,
+} from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
 import { createPost } from "@/services/postServices";
@@ -96,13 +106,23 @@ export default function CreatePostPage() {
         <ProtectedRoute>
             <div className="min-h-screen bg-[#070b1f] px-4 py-8 text-[#e2e8f0] md:px-8">
                 <div className="mx-auto max-w-3xl space-y-5">
-                    <header>
+                    <div className="mb-4 -ml-4 sm:-ml-30">
+                        <button
+                            type="button"
+                            onClick={() => router.back()}
+                            className="inline-flex items-center gap-2 rounded-lg border border-[#223e65] bg-[#0b1a31] px-3 py-2 text-sm text-[#cfe0ff] hover:bg-[#122544]"
+                        >
+                            <ChevronLeft size={16} />
+                            Back
+                        </button>
+                    </div>
+                    <section className="rounded-2xl border border-[#172f56] bg-[#0b1230] px-6 py-5 shadow-[0_12px_30px_rgba(5,10,25,0.35)]">
                         <h1 className="text-4xl font-semibold text-white">Create Post</h1>
-                        <p className="mt-1 text-base text-[#8aa0c2]">
+                        <p className="mt-2 text-base text-[#8aa0c2]">
                             Share your latest technical breakthrough or project update with the
                             community.
                         </p>
-                    </header>
+                    </section>
 
                     <section className="rounded-2xl border border-[#172f56] bg-[#0b1230]">
                         <div className="flex items-center gap-5 border-b border-[#172f56] px-5 py-3 text-[#7f98be]">

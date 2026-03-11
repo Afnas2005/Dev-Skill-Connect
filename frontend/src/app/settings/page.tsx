@@ -15,6 +15,7 @@ import {
     Settings,
     User,
     UserCog,
+    LogOut,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Avatar } from "@/components/ui/avatar";
@@ -162,6 +163,25 @@ export default function SettingsPage() {
             pushToast({
                 type: "error",
                 title: "Failed to delete account",
+            });
+        },
+    });
+
+    const logoutMutation = useMutation({
+        mutationFn: logoutUser,
+        onSuccess: () => {
+            queryClient.clear();
+            clearAuth();
+            pushToast({
+                type: "success",
+                title: "Logged out",
+            });
+            router.replace("/login");
+        },
+        onError: () => {
+            pushToast({
+                type: "error",
+                title: "Logout failed",
             });
         },
     });
@@ -482,15 +502,26 @@ export default function SettingsPage() {
                                                     Please be certain.
                                                 </p>
                                             </div>
-                                            <Button
-                                                onClick={() => deleteMutation.mutate()}
-                                                disabled={deleteMutation.isPending}
-                                                className="h-10 rounded-lg bg-[#ef2f3b] px-5 font-semibold hover:bg-[#d82834]"
-                                            >
-                                                {deleteMutation.isPending
-                                                    ? "Deleting..."
-                                                    : "Delete Account"}
-                                            </Button>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <Button
+                                                    variant="outline"
+                                                    className="h-10 rounded-lg border-[#3c2b3f] bg-[#22182b] px-5 font-semibold text-[#f4b5c0] hover:bg-[#2a1d31]"
+                                                    onClick={() => logoutMutation.mutate()}
+                                                    disabled={logoutMutation.isPending}
+                                                >
+                                                    <LogOut size={14} className="mr-2" />
+                                                    {logoutMutation.isPending ? "Logging out..." : "Logout"}
+                                                </Button>
+                                                <Button
+                                                    onClick={() => deleteMutation.mutate()}
+                                                    disabled={deleteMutation.isPending}
+                                                    className="h-10 rounded-lg bg-[#ef2f3b] px-5 font-semibold hover:bg-[#d82834]"
+                                                >
+                                                    {deleteMutation.isPending
+                                                        ? "Deleting..."
+                                                        : "Delete Account"}
+                                                </Button>
+                                            </div>
                                         </div>
                                     </section>
                                 </>

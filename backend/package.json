@@ -4,7 +4,7 @@
   "description": "DevSkill Connect Backend",
   "main": "server.ts",
   "scripts": {
-    "dev": "npm run build && node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "seed:sample": "npm run build && node dist/scripts/seedSampleData.js"

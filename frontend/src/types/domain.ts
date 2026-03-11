@@ -15,6 +15,7 @@ export type AuthUser = {
     location?: string;
     profileImage?: string;
     backgroundImage?: string;
+    resumeUrl?: string;
     socialLinks?: SocialLinks;
     createdAt?: string;
     updatedAt?: string;
@@ -38,6 +39,7 @@ export type ProfilePayload = {
     location?: string;
     profileImage?: string;
     backgroundImage?: string;
+    resumeUrl?: string;
     socialLinks?: SocialLinks;
 };
 
@@ -119,6 +121,7 @@ export type FeedPost = AppPost & {
         profileImage?: string;
         professionalTitle?: string;
         location?: string;
+        connectionStatus?: "none" | "pending" | "connected";
     };
 };
 

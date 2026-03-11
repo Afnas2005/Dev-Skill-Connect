@@ -1,5 +1,6 @@
 import Post from "../models/Post";
 import User from "../models/User";
+import ConnectionRequest from "../models/ConnectionRequest";
 
 const POST_SELECTION =
     "userId content codeSnippet codeLanguage screenshots attachments visibility status scheduledAt createdAt updatedAt";
@@ -37,6 +38,10 @@ export const getMyPosts = async (userId: string) => {
 };
 
 export const getFeedPosts = async () => {
+    return getFeedPostsForViewer();
+};
+
+export const getFeedPostsForViewer = async (viewerId?: string) => {
     const now = new Date();
     const posts = await Post.find({
         status: "published",
@@ -53,6 +58,41 @@ export const getFeedPosts = async () => {
     }
 
     const userIds = [...new Set(posts.map((item) => item.userId.toString()))];
+    const statusMap = new Map<string, "none" | "pending" | "connected">();
+    userIds.forEach((id) => statusMap.set(id, "none"));
+
+    if (viewerId && userIds.length > 0) {
+        const outgoing = await ConnectionRequest.find({
+            senderId: viewerId,
+            receiverId: { $in: userIds },
+            status: { $in: ["pending", "accepted"] },
+        })
+            .select("receiverId status")
+            .lean();
+
+        for (const item of outgoing) {
+            statusMap.set(
+                item.receiverId.toString(),
+                item.status === "accepted" ? "connected" : "pending"
+            );
+        }
+
+        const incoming = await ConnectionRequest.find({
+            receiverId: viewerId,
+            senderId: { $in: userIds },
+            status: { $in: ["pending", "accepted"] },
+        })
+            .select("senderId status")
+            .lean();
+
+        for (const item of incoming) {
+            statusMap.set(
+                item.senderId.toString(),
+                item.status === "accepted" ? "connected" : "pending"
+            );
+        }
+    }
+
     const users = await User.find({ _id: { $in: userIds } })
         .select("name email profileImage professionalTitle location")
         .lean();
@@ -69,6 +109,7 @@ export const getFeedPosts = async () => {
                 profileImage: owner?.profileImage || "",
                 professionalTitle: owner?.professionalTitle || "",
                 location: owner?.location || "",
+                connectionStatus: statusMap.get(post.userId.toString()) || "none",
             },
         };
     });

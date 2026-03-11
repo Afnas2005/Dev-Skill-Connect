@@ -6,30 +6,31 @@ export default function FigmaPage() {
         <div className="min-h-screen w-full bg-[#05091f] text-[#e8eeff]">
             <div className="w-full px-6 pb-10 pt-5 md:px-10">
                 <header className="mb-16 flex items-center justify-between border-b border-[#1a2245] pb-4">
-                    <Link href="/" className="text-sm font-semibold text-white">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 rounded-full border border-[#2a3573] bg-gradient-to-r from-[#0b1435] via-[#121c45] to-[#1a245a] px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_40px_-22px_rgba(45,67,255,0.75)]"
+                    >
+                        <span className="h-2 w-2 rounded-full bg-[#2d43ff]" />
                         DevSkill Connect
                     </Link>
-                    <nav className="hidden items-center gap-8 text-xs text-[#9aa3c8] md:flex">
-                        <span>Features</span>
-                        <span>How It Works</span>
-                        <span>Pricing</span>
-                        <span>Community</span>
-                    </nav>
                     <div className="flex items-center gap-2">
                         <Button
                             asChild
-                            className="h-8 border border-[#303a66] bg-transparent px-4 text-xs text-[#dce4ff] hover:bg-[#0e1534]"
+                            className="h-9 border border-[#2b396d] bg-[#0b1435] px-5 text-xs text-[#e3e9ff] shadow-[0_10px_25px_-20px_rgba(86,109,255,0.8)] hover:bg-[#111c45]"
                         >
                             <Link href="/login">Login</Link>
                         </Button>
-                        <Button asChild className="h-8 bg-[#2d43ff] px-4 text-xs hover:bg-[#2236d1]">
+                        <Button
+                            asChild
+                            className="h-9 bg-gradient-to-r from-[#2d43ff] via-[#3756ff] to-[#1d33c6] px-5 text-xs text-white shadow-[0_20px_35px_-18px_rgba(45,67,255,0.75)] hover:from-[#2337d9] hover:to-[#172aa6]"
+                        >
                             <Link href="/register">Register</Link>
                         </Button>
                     </div>
                 </header>
 
                 <section className="grid gap-10 lg:grid-cols-2">
-                    <div>
+                    <div className="pl-1 sm:pl-2">
                         <p className="mb-6 inline-flex rounded-full border border-[#27326a] px-3 py-1 text-[10px] font-semibold tracking-[0.18em] text-[#7380b8]">
                             THE FUTURE OF NETWORKING
                         </p>
@@ -65,18 +66,31 @@ export default function FigmaPage() {
                     <div className="rounded-2xl border border-[#1f2a55] bg-[#091330] p-8 shadow-[0_0_100px_-20px_rgba(61,89,255,0.45)]">
                         <div className="space-y-4">
                             <div className="flex gap-4">
-                                <div className="h-20 flex-1 rounded-md border border-[#2b396d] bg-[#1b2548] p-3">
-                                    <div className="mt-8 h-1.5 w-12 rounded bg-[#2d43ff]" />
+                                <div className="flex h-20 flex-1 flex-col justify-between rounded-md border border-[#2b396d] bg-[#1b2548] p-3">
+                                    <span className="pl-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8c97c4]">
+                                        Skill Match
+                                    </span>
+                                    <div className="h-1.5 w-12 rounded bg-[#2d43ff]" />
                                 </div>
-                                <div className="h-20 flex-1 rounded-md border border-[#2b396d] bg-[#1b2548] p-3">
-                                    <div className="mt-8 h-1.5 w-7 rounded bg-[#7f8cb7]" />
-                                    <div className="mt-2 h-1.5 w-10 rounded bg-[#7f8cb7]" />
+                                <div className="flex h-20 flex-1 flex-col justify-between rounded-md border border-[#2b396d] bg-[#1b2548] p-3">
+                                    <span className="pl-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8c97c4]">
+                                        Portfolio
+                                    </span>
+                                    <div>
+                                        <div className="h-1.5 w-7 rounded bg-[#7f8cb7]" />
+                                        <div className="mt-2 h-1.5 w-10 rounded bg-[#7f8cb7]" />
+                                    </div>
                                 </div>
                             </div>
-                            <div className="h-24 rounded-md border border-[#2b396d] bg-[#1b2548] p-3">
-                                <div className="mb-4 h-3 w-3 rounded-full bg-[#2d43ff]" />
-                                <div className="h-1.5 w-20 rounded bg-[#7f8cb7]" />
-                                <div className="mt-2 h-1.5 w-32 rounded bg-[#55628e]" />
+                            <div className="flex h-24 flex-col justify-between rounded-md border border-[#2b396d] bg-[#1b2548] p-3">
+                                <div className="pl-1 flex items-center gap-2 text-xs font-semibold text-[#9aa6d4]">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-[#2d43ff]" />
+                                    Verified Network
+                                </div>
+                                <div>
+                                    <div className="h-1.5 w-20 rounded bg-[#7f8cb7]" />
+                                    <div className="mt-2 h-1.5 w-32 rounded bg-[#55628e]" />
+                                </div>
                             </div>
                         </div>
                     </div>

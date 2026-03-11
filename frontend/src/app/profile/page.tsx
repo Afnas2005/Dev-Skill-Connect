@@ -136,13 +136,7 @@ export default function MyProfilePage() {
                     <main className="no-scrollbar h-screen w-full flex-1 overflow-y-auto p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0 md:p-6">
                         <div className="mx-auto w-full max-w-[900px]">
                         <header className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div className="relative w-full md:max-w-xl">
-                                <input
-                                    type="text"
-                                    placeholder="Search developers, projects..."
-                                    className="h-10 w-full rounded-xl border border-[#1e2f4f] bg-[#0a1020] px-4 text-sm text-[#dbeafe] placeholder:text-[#7084a8] focus:border-[#2563eb] focus:outline-none md:max-w-[520px]"
-                                />
-                            </div>
+                            <div className="relative w-full md:max-w-xl" />
                             <Link href="/posts/create">
                                 <Button className="h-10 rounded-xl bg-[#1d4ed8] px-6 text-sm font-semibold text-white hover:bg-[#1e40af]">
                                     Post a project
@@ -161,85 +155,48 @@ export default function MyProfilePage() {
                             </div>
                         ) : (
                             <div className="space-y-5">
-                                <section className="rounded-2xl border border-[#d6deea] bg-[#f3f5f8] p-3 shadow-[0_10px_30px_rgba(15,23,42,0.25)]">
+                                <section className="overflow-hidden rounded-2xl border border-[#d6deea] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.2)]">
                                     <div
-                                        className="relative h-[260px] overflow-hidden rounded-xl border border-[#b8c5d8] bg-cover bg-center"
+                                        className="relative h-[200px] bg-cover bg-center"
                                         style={
                                             profile.backgroundImage
                                                 ? { backgroundImage: `url(${profile.backgroundImage})` }
                                                 : {
                                                       backgroundImage:
-                                                          "linear-gradient(135deg,#0f172a 0%,#1d4ed8 45%,#22d3ee 100%)",
+                                                          "linear-gradient(135deg,#94a3b8 0%,#e2e8f0 50%,#cbd5e1 100%)",
                                                   }
                                         }
-                                    >
-                                        <div className="absolute inset-0 bg-black/20" />
-                                        {!profile.backgroundImage ? (
-                                            <div className="absolute inset-0 flex items-center justify-center text-sm font-medium text-white/85">
-                                                No cover image yet. Add one from Edit Profile.
-                                            </div>
-                                        ) : null}
-                                        <Link
-                                            href="/profile/edit"
-                                            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#111827] transition hover:bg-white"
-                                            aria-label="Edit profile cover"
-                                        >
-                                            <UserRoundPen size={16} />
-                                        </Link>
-                                    </div>
-
-                                    <div className="relative px-4 pb-4 pt-3 md:px-6">
-                                        <div className="-mt-24 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                                    />
+                                    <div className="relative border-t border-[#e2e8f0] bg-white px-5 pb-4 pt-3">
+                                        <div className="-mt-12 flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
                                             <div className="flex items-end gap-4">
                                                 <Avatar
                                                     name={displayName}
                                                     src={profile.profileImage}
-                                                    className="h-44 w-44 border-4 border-white shadow-lg"
+                                                    className="h-24 w-24 border-4 border-white shadow-md"
                                                 />
-                                                <div className="pb-2">
-                                                    <h1 className="text-5xl font-semibold leading-none text-[#0f172a]">
+                                                <div>
+                                                    <h1 className="text-2xl font-bold text-[#0a0f1f]">
                                                         {displayName}
                                                     </h1>
-                                                    <p className="mt-2 text-base leading-tight text-[#334155]">
+                                                    <p className="mt-1 text-sm font-semibold text-[#1f2a44]">
                                                         {profile.professionalTitle || "Full Stack Developer"}
-                                                    </p>
-                                                    <p className="mt-1 text-sm text-[#64748b]">
-                                                        {profile.bio ||
-                                                            "Software Engineer focused on modern full stack applications."}
                                                     </p>
                                                 </div>
                                             </div>
                                             <Link href="/profile/edit">
                                                 <Button
                                                     variant="outline"
-                                                    className="h-10 rounded-lg border-[#94a3b8] bg-white px-5 text-sm font-semibold text-[#0f172a] hover:bg-[#e2e8f0]"
+                                                    className="h-9 rounded-full border-[#cbd5e1] bg-white px-4 text-xs font-semibold text-[#0f172a] hover:bg-[#f1f5f9]"
                                                 >
-                                                    <UserRoundPen size={15} className="mr-2" />
+                                                    <UserRoundPen size={14} className="mr-2" />
                                                     Edit Profile
                                                 </Button>
                                             </Link>
                                         </div>
+                                        <div className="mt-1" />
                                     </div>
                                 </section>
-
-                                <div className="rounded-2xl border border-[#1a365f] bg-[#1d2a43] px-4 pt-3">
-                                    <div className="no-scrollbar flex gap-4 overflow-x-auto border-b border-[#1e2f4f] pb-3 text-sm">
-                                        {tabs.map((tab, index) => (
-                                            <button
-                                                key={tab}
-                                                type="button"
-                                                className={cn(
-                                                    "!rounded-none !bg-transparent !shadow-none whitespace-nowrap border-b-2 pb-2 text-sm font-medium transition-colors",
-                                                    index === 0
-                                                        ? "border-[#2563eb] text-[#60a5fa]"
-                                                        : "border-transparent text-[#7b93b9] hover:text-[#dbeafe]"
-                                                )}
-                                            >
-                                                {tab}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
 
                                 <section className="grid gap-4 xl:grid-cols-[300px_1fr]">
                                     <div className="space-y-4">

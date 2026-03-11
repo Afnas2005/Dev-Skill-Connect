@@ -35,7 +35,7 @@ export const getFeedPosts = async (
     next: NextFunction
 ) => {
     try {
-        const result = await postService.getFeedPosts();
+        const result = await postService.getFeedPostsForViewer(req.user?.userId);
         return sendResponse(res, 200, true, "Feed posts fetched successfully", result);
     } catch (error) {
         return next(error);

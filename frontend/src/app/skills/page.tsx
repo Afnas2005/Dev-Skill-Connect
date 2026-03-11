@@ -8,7 +8,6 @@ import {
     ChevronDown,
     Code2,
     Compass,
-    Download,
     FileText,
     Grid3X3,
     House,
@@ -16,7 +15,6 @@ import {
     Plus,
     Search,
     Settings,
-    Share2,
     UploadCloud,
     User,
     X,
@@ -30,7 +28,8 @@ import { useToastStore } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { createSkill, deleteSkill, getMySkills, updateSkill } from "@/services/skillServices";
-import { uploadSkillAttachments } from "@/services/uploadServices";
+import { updateMyProfile } from "@/services/profileServices";
+import { uploadResume, uploadSkillAttachments } from "@/services/uploadServices";
 import type { Skill, SkillPayload } from "@/types/domain";
 
 const leftNav = [
@@ -58,6 +57,8 @@ export default function SkillsPage() {
     const [addProficiency, setAddProficiency] = useState(7);
     const [addDescription, setAddDescription] = useState("");
     const [addFiles, setAddFiles] = useState<File[]>([]);
+    const [resumeFile, setResumeFile] = useState<File | null>(null);
+    const [showResumeModal, setShowResumeModal] = useState(false);
     const queryClient = useQueryClient();
     const pushToast = useToastStore((state) => state.pushToast);
     const user = useAuthStore((state) => state.user);
@@ -153,6 +154,27 @@ export default function SkillsPage() {
             }),
     });
 
+    const resumeMutation = useMutation({
+        mutationFn: async (file: File) => {
+            const upload = await uploadResume(file);
+            return updateMyProfile({ resumeUrl: upload.data.url });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
+            setResumeFile(null);
+            setShowResumeModal(false);
+            pushToast({
+                type: "success",
+                title: "Resume uploaded",
+            });
+        },
+        onError: () =>
+            pushToast({
+                type: "error",
+                title: "Resume upload failed",
+            }),
+    });
+
     const skills = skillsQuery.data?.data || [];
     const mastery = skills.length
         ? Math.round(skills.reduce((acc, skill) => acc + levelToPercent(skill.level), 0) / skills.length)
@@ -172,6 +194,18 @@ export default function SkillsPage() {
         setAddProficiency(7);
         setAddDescription("");
         setAddFiles([]);
+    };
+
+    const handleImportResume = () => {
+        if (!resumeFile) {
+            pushToast({
+                type: "error",
+                title: "Select a resume",
+                description: "Choose a PDF, DOC, or DOCX file to upload.",
+            });
+            return;
+        }
+        resumeMutation.mutate(resumeFile);
     };
 
     const submitAddSkill = () => {
@@ -241,29 +275,6 @@ export default function SkillsPage() {
                     </aside>
 
                     <main className="no-scrollbar h-screen w-full flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0">
-                        <header className="sticky top-0 z-20 border-b border-[#132849] bg-[#040b1d]/95 px-6 py-3 backdrop-blur">
-                            <div className="mx-auto flex w-full max-w-[900px] items-center justify-between gap-4">
-                                <div className="relative w-full max-w-[540px]">
-                                    <Search
-                                        size={16}
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#617ca5]"
-                                    />
-                                    <input
-                                        placeholder="Search skills or colleagues..."
-                                        className="h-10 w-full rounded-xl border border-[#1e2f4f] bg-[#0a1020] pl-9 pr-3 text-sm text-[#dbeafe] placeholder:text-[#7084a8] focus:border-[#2563eb] focus:outline-none"
-                                    />
-                                </div>
-                                <div className="hidden items-center gap-4 md:flex">
-                                    <button type="button" className="text-[#88a2c9] hover:text-white">
-                                        <Share2 size={18} />
-                                    </button>
-                                    <button type="button" className="text-[#88a2c9] hover:text-white">
-                                        <Settings size={18} />
-                                    </button>
-                                </div>
-                            </div>
-                        </header>
-
                         <div className="mx-auto w-full max-w-[900px] px-4 py-8 md:px-6">
                             <section className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-[#1a365f] bg-[#1d2a43] p-4">
                                 <div>
@@ -272,17 +283,13 @@ export default function SkillsPage() {
                                         Manage and showcase your professional technical proficiency.
                                     </p>
                                 </div>
-                                <div className="flex gap-3">
+                                <div className="flex flex-wrap gap-3">
                                     <Button
-                                        variant="outline"
-                                        className="h-10 rounded-xl border-[#1d3b66] bg-[#0f1f39] text-[#a8c3e8] hover:bg-[#142b4d] hover:text-white"
+                                        className="h-10 rounded-xl bg-[#2563eb] px-5 text-sm font-semibold text-white hover:bg-[#1d4ed8]"
+                                        onClick={() => setShowResumeModal(true)}
                                     >
-                                        <Share2 size={14} className="mr-2" />
-                                        Share Profile
-                                    </Button>
-                                    <Button className="h-10 rounded-xl bg-[#2563eb] px-5 text-sm font-semibold text-white hover:bg-[#1d4ed8]">
-                                        <Download size={14} className="mr-2" />
-                                        Export Resume
+                                        <UploadCloud size={14} className="mr-2" />
+                                        Upload Resume
                                     </Button>
                                 </div>
                             </section>
@@ -466,6 +473,81 @@ export default function SkillsPage() {
                     editMutation.mutate({ id: editingSkill._id, payload, files });
                 }}
             />
+            {showResumeModal ? (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#020617]/80 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-lg rounded-2xl border border-[#274a7c] bg-[#1b2a3f] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+                        <div className="flex items-start justify-between border-b border-[#2a3d5a] p-5 pb-4">
+                            <div>
+                                <h2 className="text-2xl font-semibold text-white">Upload Resume</h2>
+                                <p className="mt-1 text-sm text-[#8ea5c8]">
+                                    PDF, DOC, or DOCX (max 10MB).
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowResumeModal(false);
+                                    setResumeFile(null);
+                                }}
+                                className="text-[#8ea5c8] hover:text-white"
+                            >
+                                <X size={28} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 p-5">
+                            <div className="rounded-xl border border-dashed border-[#36557d] bg-[#101d34] p-4">
+                                <label className="flex cursor-pointer items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <UploadCloud size={22} className="text-[#8ea5c8]" />
+                                        <div>
+                                            <p className="text-sm text-[#d6e3f7]">
+                                                {resumeFile ? resumeFile.name : "Choose a resume file"}
+                                            </p>
+                                            <p className="text-xs text-[#6f86aa]">
+                                                {resumeFile
+                                                    ? `${(resumeFile.size / (1024 * 1024)).toFixed(1)} MB`
+                                                    : "PDF, DOC, DOCX"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className="text-sm text-[#7fb2ff]">Browse</span>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        className="hidden"
+                                        onChange={(event) =>
+                                            setResumeFile(event.target.files?.[0] || null)
+                                        }
+                                    />
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2.5 border-t border-[#2a3d5a] p-4">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-11 text-[#9bb0cf] hover:bg-[#21314d] hover:text-white"
+                                onClick={() => {
+                                    setShowResumeModal(false);
+                                    setResumeFile(null);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                className="h-11 rounded-xl bg-[#2684ea] px-6 text-sm font-semibold hover:bg-[#1f72cb]"
+                                disabled={resumeMutation.isPending || !resumeFile}
+                                onClick={handleImportResume}
+                            >
+                                {resumeMutation.isPending ? "Uploading..." : "Upload Resume"}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             {showAddForm ? (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#020617]/80 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-2xl rounded-2xl border border-[#274a7c] bg-[#1b2a3f] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">

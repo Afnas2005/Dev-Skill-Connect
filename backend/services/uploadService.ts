@@ -9,7 +9,8 @@ type UploadFolder =
     | "profile-images"
     | "skill-attachments"
     | "post-screenshots"
-    | "post-files";
+    | "post-files"
+    | "resumes";
 type UploadFile = {
     buffer: Buffer;
     mimetype: string;
@@ -26,9 +27,15 @@ const toSafeExt = (mimetype: string, originalname?: string) => {
     if (mimetype === "application/pdf") return "pdf";
     if (mimetype === "application/json") return "json";
     if (mimetype === "text/plain") return "txt";
+    if (mimetype === "application/msword") return "doc";
+    if (
+        mimetype ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+        return "docx";
     if (mimetype === "application/octet-stream" && originalname) {
         const ext = path.extname(originalname).replace(".", "").toLowerCase();
-        if (["zip", "pdf", "json", "txt"].includes(ext)) {
+        if (["zip", "pdf", "json", "txt", "doc", "docx"].includes(ext)) {
             return ext;
         }
     }

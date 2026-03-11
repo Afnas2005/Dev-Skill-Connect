@@ -88,3 +88,25 @@ export const uploadPostFiles = async (
         return next(error);
     }
 };
+
+export const uploadResume = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const file = req.file as
+            | { buffer: Buffer; mimetype: string; originalname?: string }
+            | undefined;
+        if (!file) {
+            return sendResponse(res, 400, false, "Resume file is required");
+        }
+
+        const url = await uploadService.uploadSingleFile(file, "resumes");
+        return sendResponse(res, 200, true, "Resume uploaded successfully", {
+            url,
+        });
+    } catch (error) {
+        return next(error);
+    }
+};

@@ -78,38 +78,47 @@ export default function EditProfilePage() {
     return (
         <ProtectedRoute>
             <div className="min-h-screen bg-[#050d1f] px-4 py-8 md:px-6">
-                <div className="mx-auto w-full max-w-[1040px] rounded-2xl border border-[#132849] bg-[linear-gradient(180deg,#081327,#09182d)] p-6 md:p-8">
-                    {profileQuery.isLoading ? (
-                        <div className="flex items-center gap-2 text-[#9bb0cf]">
-                            <Spinner size={18} />
-                            <span className="text-sm">Loading profile...</span>
-                        </div>
-                    ) : profileQuery.isError || !profileQuery.data?.data ? (
-                        <div className="rounded-lg border border-red-900/40 bg-red-950/50 p-4 text-sm text-red-300">
-                            Failed to load profile.
-                        </div>
-                    ) : (
-                        <ProfileForm
-                            initial={profileQuery.data.data.profile}
-                            loading={mutation.isPending}
-                            onCancel={() => router.push("/profile")}
-                            onSubmit={(
-                                payload,
-                                imageFile,
-                                removeImage,
-                                backgroundFile,
-                                removeBackgroundImage
-                            ) =>
-                                mutation.mutate({
+                <div className="mx-auto w-full max-w-[1040px] space-y-6">
+                    <section className="rounded-2xl border border-[#132849] bg-[linear-gradient(180deg,#0a1730,#0a1b34)] p-6 md:p-8">
+                        <h1 className="text-4xl font-semibold text-white">Edit Profile</h1>
+                        <p className="mt-2 text-[#7f98be]">
+                            Keep your profile fresh so collaborators can learn about your latest work.
+                        </p>
+                    </section>
+
+                    <section className="rounded-2xl border border-[#132849] bg-[linear-gradient(180deg,#081327,#09182d)] p-6 md:p-8">
+                        {profileQuery.isLoading ? (
+                            <div className="flex items-center gap-2 text-[#9bb0cf]">
+                                <Spinner size={18} />
+                                <span className="text-sm">Loading profile...</span>
+                            </div>
+                        ) : profileQuery.isError || !profileQuery.data?.data ? (
+                            <div className="rounded-lg border border-red-900/40 bg-red-950/50 p-4 text-sm text-red-300">
+                                Failed to load profile.
+                            </div>
+                        ) : (
+                            <ProfileForm
+                                initial={profileQuery.data.data.profile}
+                                loading={mutation.isPending}
+                                onCancel={() => router.push("/profile")}
+                                onSubmit={(
                                     payload,
-                                    file: imageFile,
+                                    imageFile,
                                     removeImage,
                                     backgroundFile,
-                                    removeBackgroundImage,
-                                })
-                            }
-                        />
-                    )}
+                                    removeBackgroundImage
+                                ) =>
+                                    mutation.mutate({
+                                        payload,
+                                        file: imageFile,
+                                        removeImage,
+                                        backgroundFile,
+                                        removeBackgroundImage,
+                                    })
+                                }
+                            />
+                        )}
+                    </section>
                 </div>
             </div>
         </ProtectedRoute>

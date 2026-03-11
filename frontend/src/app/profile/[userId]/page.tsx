@@ -1,10 +1,11 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
     BriefcaseBusiness,
     CheckCircle2,
+    ChevronLeft,
     ExternalLink,
     Github,
     Linkedin,
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 export default function PublicProfilePage() {
     const params = useParams<{ userId: string }>();
     const userId = params.userId;
+    const router = useRouter();
 
     const profileQuery = useQuery({
         queryKey: ["profile", "public", userId],
@@ -28,6 +30,7 @@ export default function PublicProfilePage() {
 
     const profile = profileQuery.data?.data?.profile;
     const skills = profileQuery.data?.data?.skills || [];
+    const resumeUrl = profile?.resumeUrl || "";
 
     const expertSkills = skills.filter((skill) => skill.level === "advanced").slice(0, 6);
     const advancedSkills = skills.filter((skill) => skill.level === "intermediate").slice(0, 6);
@@ -36,6 +39,14 @@ export default function PublicProfilePage() {
     return (
         <div className="min-h-screen bg-[#07101f] px-4 py-6 text-[#dce8fa] md:px-8">
             <div className="mx-auto max-w-[1180px] rounded-2xl border border-[#123357] bg-[linear-gradient(180deg,#0a172b,#081325)] p-6 md:p-8">
+                <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="mb-4 inline-flex items-center gap-2 rounded-lg border border-[#223e65] bg-[#0b1a31] px-3 py-2 text-sm text-[#cfe0ff] hover:bg-[#122544]"
+                >
+                    <ChevronLeft size={16} />
+                    Back
+                </button>
                 {profileQuery.isLoading ? (
                     <div className="py-12 text-[#8aa0c2]">Loading profile...</div>
                 ) : profileQuery.isError || !profile ? (
@@ -234,9 +245,25 @@ export default function PublicProfilePage() {
                                     <CheckCircle2 size={14} className="text-[#34d399]" />
                                     Open to full-time roles & consulting
                                 </p>
-                                <Button className="mt-3 h-10 w-full rounded-lg bg-[#243c62] text-white hover:bg-[#2e4f80]">
-                                    Download Resume
-                                </Button>
+                                {resumeUrl ? (
+                                    <a
+                                        href={resumeUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="block"
+                                    >
+                                        <Button className="mt-3 h-10 w-full rounded-lg bg-[#243c62] text-white hover:bg-[#2e4f80]">
+                                            Download Resume
+                                        </Button>
+                                    </a>
+                                ) : (
+                                    <Button
+                                        className="mt-3 h-10 w-full rounded-lg bg-[#243c62] text-white hover:bg-[#2e4f80]"
+                                        disabled
+                                    >
+                                        Download Resume
+                                    </Button>
+                                )}
                             </section>
 
                             <section className="rounded-xl border border-[#1d3a63] bg-[#0b1a31] p-4">

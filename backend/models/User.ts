@@ -16,6 +16,7 @@ export interface IUser extends Document {
     location?: string;
     profileImage?: string;
     backgroundImage?: string;
+    resumeUrl?: string;
     socialLinks?: ISocialLinks;
     createdAt: Date;
     updatedAt: Date;
@@ -32,6 +33,7 @@ const UserSchema: Schema = new Schema(
         location: { type: String, default: "" },
         profileImage: { type: String, default: "" },
         backgroundImage: { type: String, default: "" },
+        resumeUrl: { type: String, default: "" },
         socialLinks: {
             github: { type: String, default: "" },
             linkedin: { type: String, default: "" },

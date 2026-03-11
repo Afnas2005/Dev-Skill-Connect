@@ -9,6 +9,7 @@ export const profileUpdateSchema = Joi.object({
     location: Joi.string().max(120).allow("").optional(),
     profileImage: Joi.string().uri().allow("").optional(),
     backgroundImage: Joi.string().uri().allow("").optional(),
+    resumeUrl: Joi.string().uri().allow("").optional(),
     socialLinks: Joi.object({
         github: urlOrEmpty,
         linkedin: urlOrEmpty,

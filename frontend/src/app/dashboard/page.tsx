@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Bell,
@@ -21,7 +22,8 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { useToastStore } from "@/store/toastStore";
 import { cn } from "@/lib/utils";
-import { getFeedPosts } from "@/services/postServices";
+import { createPost, getFeedPosts } from "@/services/postServices";
+import { uploadPostFiles, uploadPostScreenshots } from "@/services/uploadServices";
 import { searchSkills, sendConnectionRequest } from "@/services/searchServices";
 
 const leftNav = [
@@ -45,10 +47,60 @@ export default function DashboardPage() {
     const user = useAuthStore((state) => state.user);
     const pushToast = useToastStore((state) => state.pushToast);
     const queryClient = useQueryClient();
+    const [postContent, setPostContent] = useState("");
+    const [postImages, setPostImages] = useState<File[]>([]);
+    const [postVideos, setPostVideos] = useState<File[]>([]);
+    const [pendingConnectIds, setPendingConnectIds] = useState<string[]>([]);
+    const imageInputRef = useRef<HTMLInputElement | null>(null);
+    const videoInputRef = useRef<HTMLInputElement | null>(null);
     const feedQuery = useQuery({
         queryKey: ["posts", "feed", user?.id || "anonymous"],
         queryFn: getFeedPosts,
         refetchOnMount: "always",
+    });
+    const createPostMutation = useMutation({
+        mutationFn: async (content: string) => {
+            let screenshotUrls: string[] = [];
+            let attachmentUrls: string[] = [];
+
+            if (postImages.length > 0) {
+                const upload = await uploadPostScreenshots(postImages);
+                screenshotUrls = upload.data.urls;
+            }
+
+            if (postVideos.length > 0) {
+                const upload = await uploadPostFiles(postVideos);
+                attachmentUrls = upload.data.urls;
+            }
+
+            return createPost({
+                content,
+                status: "published",
+                visibility: "public",
+                screenshots: screenshotUrls,
+                attachments: attachmentUrls,
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["posts", "feed"] });
+            setPostContent("");
+            setPostImages([]);
+            setPostVideos([]);
+            pushToast({
+                type: "success",
+                title: "Post published",
+            });
+        },
+        onError: (error: unknown) => {
+            const message =
+                typeof error === "object" && error && "message" in error
+                    ? String((error as { message?: string }).message)
+                    : "Could not publish post";
+            pushToast({
+                type: "error",
+                title: message,
+            });
+        },
     });
     const suggestionsQuery = useQuery({
         queryKey: ["suggestions", user?.id || "anonymous"],
@@ -57,16 +109,28 @@ export default function DashboardPage() {
     });
     const connectMutation = useMutation({
         mutationFn: sendConnectionRequest,
+        onMutate: (userId: string) => {
+            setPendingConnectIds((prev) =>
+                prev.includes(userId) ? prev : [...prev, userId]
+            );
+            return { userId };
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["suggestions"] });
             queryClient.invalidateQueries({ queryKey: ["search"] });
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            queryClient.invalidateQueries({ queryKey: ["posts", "feed"] });
             pushToast({
                 type: "success",
                 title: "Connection request sent",
             });
         },
-        onError: (error: unknown) => {
+        onError: (error: unknown, _vars, context) => {
+            if (context?.userId) {
+                setPendingConnectIds((prev) =>
+                    prev.filter((id) => id !== context.userId)
+                );
+            }
             const message =
                 typeof error === "object" && error && "message" in error
                     ? String((error as { message?: string }).message)
@@ -152,31 +216,92 @@ export default function DashboardPage() {
                             <div className="flex items-start gap-3">
                                 <Avatar name={user?.name || user?.email} src={user?.profileImage} />
                                 <div className="w-full space-y-4">
-                                    <div className="h-24 rounded-2xl border border-[#253652] bg-[#0f1b30] px-4 py-3 text-sm text-[#8ea4c8]">
-                                        Share an update on your latest project...
-                                    </div>
+                                    <textarea
+                                        value={postContent}
+                                        onChange={(event) => setPostContent(event.target.value)}
+                                        placeholder="Share an update on your latest project..."
+                                        className="h-24 w-full resize-none rounded-2xl border border-[#253652] bg-[#0f1b30] px-4 py-3 text-sm text-[#d3def1] placeholder:text-[#8ea4c8] focus:border-[#2b80e0] focus:outline-none"
+                                        maxLength={3000}
+                                    />
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-5 text-sm font-medium text-[#8da2c4]">
-                                            <span className="inline-flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                className="inline-flex items-center gap-1.5 hover:text-[#cfe0ff]"
+                                                onClick={() => imageInputRef.current?.click()}
+                                            >
                                                 <ImageIcon size={15} className="text-[#2b80e0]" />
                                                 Photo
-                                            </span>
+                                            </button>
                                             <span className="inline-flex items-center gap-1.5">
                                                 <Code2 size={15} className="text-[#11a873]" />
                                                 Code
                                             </span>
-                                            <span className="inline-flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                className="inline-flex items-center gap-1.5 hover:text-[#cfe0ff]"
+                                                onClick={() => videoInputRef.current?.click()}
+                                            >
                                                 <Video size={15} className="text-[#9a57f5]" />
                                                 Video
-                                            </span>
+                                            </button>
                                         </div>
                                         <Button
-                                            asChild
-                                            className="h-10 rounded-xl bg-[#2b80e0] px-8 text-white hover:bg-[#236abd]"
+                                            onClick={() => {
+                                                const trimmed = postContent.trim();
+                                                if (!trimmed) return;
+                                                createPostMutation.mutate(trimmed);
+                                            }}
+                                            disabled={createPostMutation.isPending || !postContent.trim()}
+                                            className="h-10 rounded-xl bg-[#2b80e0] px-8 text-white hover:bg-[#236abd] disabled:cursor-not-allowed disabled:bg-[#1f3654]"
                                         >
-                                            <Link href="/posts/create">Post</Link>
+                                            {createPostMutation.isPending ? "Posting..." : "Post"}
                                         </Button>
                                     </div>
+                                    <input
+                                        ref={imageInputRef}
+                                        type="file"
+                                        multiple
+                                        accept="image/png,image/jpeg,image/jpg"
+                                        className="hidden"
+                                        onChange={(event) =>
+                                            setPostImages(
+                                                Array.from(event.target.files || []).slice(0, 6)
+                                            )
+                                        }
+                                    />
+                                    <input
+                                        ref={videoInputRef}
+                                        type="file"
+                                        multiple
+                                        accept="video/mp4,video/webm,video/quicktime"
+                                        className="hidden"
+                                        onChange={(event) =>
+                                            setPostVideos(
+                                                Array.from(event.target.files || []).slice(0, 3)
+                                            )
+                                        }
+                                    />
+                                    {(postImages.length > 0 || postVideos.length > 0) && (
+                                        <div className="flex flex-wrap gap-2 text-xs text-[#7f96bd]">
+                                            {postImages.map((file, index) => (
+                                                <span
+                                                    key={`${file.name}-${index}`}
+                                                    className="rounded bg-[#10203f] px-2 py-1"
+                                                >
+                                                    {file.name}
+                                                </span>
+                                            ))}
+                                            {postVideos.map((file, index) => (
+                                                <span
+                                                    key={`${file.name}-${index}`}
+                                                    className="rounded bg-[#10203f] px-2 py-1"
+                                                >
+                                                    {file.name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </section>
@@ -202,14 +327,19 @@ export default function DashboardPage() {
                                     >
                                         <header className="mb-3 flex items-start justify-between">
                                             <div className="flex items-center gap-3">
-                                                <Avatar
-                                                    name={post.user.name || post.user.email}
-                                                    src={post.user.profileImage}
-                                                />
+                                                <Link href={`/profile/${post.user.id}`} className="shrink-0">
+                                                    <Avatar
+                                                        name={post.user.name || post.user.email}
+                                                        src={post.user.profileImage}
+                                                    />
+                                                </Link>
                                                 <div>
-                                                    <p className="text-xl font-semibold text-[#e6eeff]">
+                                                    <Link
+                                                        href={`/profile/${post.user.id}`}
+                                                        className="text-xl font-semibold text-[#e6eeff] hover:text-[#6fb3ff]"
+                                                    >
                                                         {post.user.name || "Developer"}
-                                                    </p>
+                                                    </Link>
                                                     <p className="text-sm text-[#90a4c6]">
                                                         {post.user.professionalTitle ||
                                                             "Full-stack developer"}{" "}
@@ -256,10 +386,20 @@ export default function DashboardPage() {
                                                 <span>Attachments ({post.attachments.length})</span>
                                                 <span className="capitalize">{post.status}</span>
                                             </div>
-                                            <span className="inline-flex items-center gap-1">
-                                                <UserPlus size={14} />
-                                                Connect
-                                            </span>
+                                            {post.user.connectionStatus !== "pending" &&
+                                            post.user.connectionStatus !== "connected" &&
+                                            !pendingConnectIds.includes(String(post.user.id)) &&
+                                            String(post.user.id) !== String(user?.id) ? (
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex items-center gap-1 rounded-lg border border-[#2a3d5f] bg-[#15253d] px-3 py-1.5 text-[#6fb3ff] disabled:cursor-not-allowed disabled:opacity-60"
+                                                    disabled={connectMutation.isPending}
+                                                    onClick={() => connectMutation.mutate(String(post.user.id))}
+                                                >
+                                                    <UserPlus size={14} />
+                                                    Connect
+                                                </button>
+                                            ) : null}
                                         </footer>
                                     </article>
                                 ))

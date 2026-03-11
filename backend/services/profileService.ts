@@ -1,8 +1,10 @@
 import User from "../models/User";
 import Skill from "../models/Skill";
 
-const PROFILE_SELECTION = "name email bio professionalTitle location profileImage backgroundImage socialLinks createdAt updatedAt";
-const PUBLIC_PROFILE_SELECTION = "name bio professionalTitle location profileImage backgroundImage socialLinks createdAt updatedAt";
+const PROFILE_SELECTION =
+    "name email bio professionalTitle location profileImage backgroundImage resumeUrl socialLinks createdAt updatedAt";
+const PUBLIC_PROFILE_SELECTION =
+    "name bio professionalTitle location profileImage backgroundImage resumeUrl socialLinks createdAt updatedAt";
 
 const sanitizeProfile = (user: any) => ({
     id: user._id,
@@ -13,6 +15,7 @@ const sanitizeProfile = (user: any) => ({
     location: user.location || "",
     profileImage: user.profileImage || "",
     backgroundImage: user.backgroundImage || "",
+    resumeUrl: user.resumeUrl || "",
     socialLinks: user.socialLinks || {},
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
@@ -26,6 +29,7 @@ const sanitizePublicProfile = (user: any) => ({
     location: user.location || "",
     profileImage: user.profileImage || "",
     backgroundImage: user.backgroundImage || "",
+    resumeUrl: user.resumeUrl || "",
     socialLinks: user.socialLinks || {},
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
@@ -57,6 +61,7 @@ export const updateMyProfile = async (
         location?: string;
         profileImage?: string;
         backgroundImage?: string;
+        resumeUrl?: string;
         socialLinks?: {
             github?: string;
             linkedin?: string;
@@ -75,6 +80,7 @@ export const updateMyProfile = async (
     if (payload.location !== undefined) user.location = payload.location;
     if (payload.profileImage !== undefined) user.profileImage = payload.profileImage;
     if (payload.backgroundImage !== undefined) user.backgroundImage = payload.backgroundImage;
+    if (payload.resumeUrl !== undefined) user.resumeUrl = payload.resumeUrl;
 
     if (payload.socialLinks) {
         user.socialLinks = {

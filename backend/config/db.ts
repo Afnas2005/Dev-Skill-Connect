@@ -8,9 +8,9 @@ export const connectDB = async () => {
             dbName: "devskill-connect",
         });
 
-        console.log("[DB] ✅ Connected to MongoDB Atlas");
+        console.log("[DB]  Connected to MongoDB Atlas");
     } catch (error: any) {
-        console.error("[DB] ❌ Connection error:", error.message);
+        console.error("[DB]  Connection error:", error.message);
         process.exit(1);
     }
 };
