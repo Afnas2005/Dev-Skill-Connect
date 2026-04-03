@@ -20,10 +20,13 @@ export function Avatar({ name, src, className }: AvatarProps) {
         <MuiAvatar
             src={src}
             alt={name || "Profile image"}
-            className={cn("h-10 w-10 text-sm font-semibold shadow-[6px_6px_12px_#121722,-6px_-6px_12px_#2a3448]", className)}
+            className={cn(
+                "h-10 w-10 border border-white/90 text-sm font-semibold shadow-[0_10px_24px_rgba(15,23,42,0.12)]",
+                className
+            )}
             sx={{
-                bgcolor: src ? undefined : "#20293a",
-                color: src ? undefined : "#d9e4f8",
+                bgcolor: src ? undefined : "#dbeafe",
+                color: src ? undefined : "#1d4ed8",
             }}
         >
             {getInitials(name)}

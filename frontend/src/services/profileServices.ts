@@ -17,3 +17,12 @@ export const updateMyProfile = async (payload: ProfilePayload) => {
 export const getPublicProfile = async (userId: string) => {
     return api.get<ApiResponse<ProfileResult>>(`/profile/${userId}`);
 };
+
+export const changePassword = async (payload: any) => {
+    // Mocked response since backend routing for password changes doesn't exist yet
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({ data: { success: true } });
+        }, 1000);
+    });
+};

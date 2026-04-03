@@ -17,7 +17,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { AlertCircle, CheckCircle2, Shield } from "lucide-react";
+import { AlertCircle, CheckCircle2, Shield, Eye, EyeOff } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const getPasswordScore = (value: string): number => {
     let score = 0;
@@ -29,8 +30,8 @@ const getPasswordScore = (value: string): number => {
 };
 
 const getPasswordLevel = (score: number): string => {
-    if (score <= 1) return "Low";
-    if (score === 2) return "Medium";
+    if (score <= 1) return "Weak";
+    if (score === 2) return "Fair";
     if (score === 3) return "Good";
     return "Strong";
 };
@@ -42,6 +43,7 @@ export default function RegisterPage() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -99,186 +101,211 @@ export default function RegisterPage() {
     };
 
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
-    const isPlaceholderClientId =
-        !googleClientId ||
-        googleClientId.includes("REPLACE_WITH_REAL_GOOGLE_WEB_CLIENT_ID") ||
-        googleClientId.includes("your_google_client_id_here");
-    const isValidClientId =
-        !isPlaceholderClientId &&
-        /^[a-zA-Z0-9-]+\.apps\.googleusercontent\.com$/.test(googleClientId);
+    const isPlaceholderClientId = !googleClientId || googleClientId.includes("REPLACE_WITH_REAL_GOOGLE_WEB_CLIENT_ID");
+    const isValidClientId = !isPlaceholderClientId && /^[a-zA-Z0-9-]+\.apps\.googleusercontent\.com$/.test(googleClientId);
+    const googleOriginError =
+        "Google sign-up is blocked for this origin. Add http://localhost:3000 to Authorized JavaScript origins in Google Cloud Console.";
 
     const isBusy = registerMutation.isPending || googleMutation.isPending || !!success;
 
     return (
-        <div className="min-h-screen bg-[#060d24] lg:flex">
-            <aside className="relative hidden min-h-screen w-full overflow-hidden bg-[linear-gradient(180deg,#163b6f_0%,#071639_70%,#020814_100%)] lg:flex lg:w-1/2">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.12),transparent_38%),radial-gradient(circle_at_80%_55%,rgba(33,122,255,0.22),transparent_42%)]" />
-                <div className="relative flex w-full flex-col justify-between p-12 text-white">
-                    <p className="text-4xl font-semibold tracking-tight">DevSkill Connect</p>
-                    <div className="max-w-xl space-y-6">
-                        <h1 className="text-7xl font-bold leading-[1.1]">
-                            Build your
-                            <br />
-                            professional edge.
+        <div className="min-h-screen bg-[var(--app-bg)] lg:flex font-sans">
+            <aside className="relative hidden min-h-screen w-full overflow-hidden bg-[var(--background)] lg:flex lg:w-[50%] border-r border-[var(--app-line)] isolate">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(139,92,246,0.15),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(6,182,212,0.15),transparent_40%)]" />
+                <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--app-secondary)] opacity-15 blur-[120px]" />
+                <div className="absolute bottom-[10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--app-primary)] opacity-15 blur-[100px]" />
+                
+                <div className="relative flex w-full flex-col justify-between p-14 xl:p-24 z-10">
+                    <Link href="/">
+                        <div className="flex items-center gap-4 group cursor-pointer w-fit">
+                            <div className="flex justify-center items-center w-12 h-12 rounded-xl bg-[var(--app-primary)] text-white font-bold text-xl shadow-glow group-hover:scale-110 transition-transform">DC</div>
+                            <p className="text-2xl font-bold tracking-tight text-[var(--app-text)] group-hover:text-gradient-primary">DevSkill Connect</p>
+                        </div>
+                    </Link>
+                    <div className="max-w-xl space-y-8">
+                        <h1 className="text-5xl font-extrabold leading-[1.1] xl:text-6xl text-[var(--app-text)]">
+                            Begin your <br />
+                            <span className="text-gradient-secondary text-glow-secondary">ascension.</span>
                         </h1>
-                        <p className="text-3xl leading-relaxed text-blue-100">
-                            Join the elite community of full-stack developers. Showcase your projects,
-                            get endorsed, and land your next dream role.
+                        <p className="text-xl leading-relaxed text-[var(--app-text-soft)]">
+                            Join the elite network of developers building the future. Your journey to mastery starts here.
                         </p>
                     </div>
-                    <p className="text-lg text-blue-100">Join 10k+ developers today</p>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3 opacity-90 text-[var(--app-text-soft)]">
+                            <CheckCircle2 className="text-[var(--app-success)]" size={20} />
+                            <span className="font-medium text-sm">Build your dynamic portfolio</span>
+                        </div>
+                        <div className="flex items-center gap-3 opacity-90 text-[var(--app-text-soft)]">
+                            <CheckCircle2 className="text-[var(--app-success)]" size={20} />
+                            <span className="font-medium text-sm">Connect with industry leaders</span>
+                        </div>
+                        <div className="flex items-center gap-3 opacity-90 text-[var(--app-text-soft)]">
+                            <CheckCircle2 className="text-[var(--app-success)]" size={20} />
+                            <span className="font-medium text-sm">Track your technical growth</span>
+                        </div>
+                    </div>
                 </div>
             </aside>
 
-            <main className="flex min-h-screen w-full items-center justify-center bg-[#0a1535] px-6 py-8 lg:w-1/2">
-                <div className="w-full max-w-md space-y-7">
-                    <div>
-                        <h2 className="text-5xl font-bold text-white">Create your account</h2>
-                        <p className="mt-2 text-xl text-[#93a4c9]">
-                            Start your journey with the world&apos;s best dev community.
+            <main className="flex min-h-screen w-full items-center justify-center px-6 py-10 lg:w-[50%] lg:px-12 relative overflow-hidden">
+                <div className="absolute lg:hidden top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_100%,rgba(139,92,246,0.1),transparent_60%)] pointer-events-none" />
+                
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="w-full max-w-md app-card p-8 lg:p-12 relative z-10"
+                >
+                    <div className="mb-8">
+                        <h2 className="text-3xl font-extrabold tracking-tight text-[var(--app-text)]">Initialize Node</h2>
+                        <p className="mt-2 text-sm text-[var(--app-text-soft)]">
+                            Create your account to access the network.
                         </p>
                     </div>
 
-                    <div className="min-h-11">
-                        {isValidClientId ? (
-                            <GoogleLogin
-                                onSuccess={(credentialResponse) => {
-                                    if (credentialResponse.credential) {
-                                        googleMutation.mutate(credentialResponse.credential);
+                    <div className="space-y-4">
+                        <div className="min-h-11 flex justify-center">
+                            {isValidClientId ? (
+                                <div className="w-full overflow-hidden rounded-[12px]">
+                                    <GoogleLogin
+                                        onSuccess={(credentialResponse) => {
+                                            if (credentialResponse.credential) {
+                                                googleMutation.mutate(credentialResponse.credential);
+                                            }
+                                        }}
+                                        onError={() => setError(googleOriginError)}
+                                        theme="filled_black"
+                                        size="large"
+                                        shape="rectangular"
+                                        text="signup_with"
+                                        width="100%"
+                                    />
+                                </div>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        setError("Google registration is currently disabled. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID first.")
                                     }
-                                }}
-                                onError={() =>
-                                    setError(
-                                        "Google authentication failed. Check Google Cloud settings."
-                                    )
-                                }
-                                theme="outline"
-                                size="large"
-                                shape="rectangular"
-                                text="signup_with"
-                                width={380}
-                            />
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setError(
-                                        "Google registration is currently disabled. Please configure your Google Client ID."
-                                    )
-                                }
-                                className="h-12 w-full rounded-xl border border-[#334873] bg-[#182846] text-base font-medium text-[#d8e2f8]"
-                            >
-                                Sign up with Google
-                            </button>
-                        )}
+                                    className="w-full h-12 text-[var(--app-text)] border-[var(--app-line)] hover:bg-[var(--app-surface-soft)]"
+                                >
+                                    Sign up with Google
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs font-semibold tracking-[0.14em] text-[#7f91ba]">
-                        <div className="h-px flex-1 bg-[#26365d]" />
-                        OR WITH EMAIL
-                        <div className="h-px flex-1 bg-[#26365d]" />
+                    <div className="my-8 flex items-center gap-4 text-xs font-bold tracking-[0.2em] text-[var(--app-muted)]">
+                        <div className="h-px flex-1 bg-[var(--app-line)]" />
+                        OR EMAIL
+                        <div className="h-px flex-1 bg-[var(--app-line)]" />
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {error ? (
-                            <div className="flex items-start gap-2 rounded-lg border border-red-400/30 bg-red-500/10 p-3 text-sm font-medium text-red-200">
-                                <AlertCircle size={18} className="mt-0.5 shrink-0" />
-                                <span>{error}</span>
-                            </div>
-                        ) : null}
-
-                        {success ? (
-                            <div className="flex items-start gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-200">
-                                <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-                                <span>{success}</span>
-                            </div>
-                        ) : null}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-medium text-red-400">
+                                    <AlertCircle size={18} className="shrink-0" />
+                                    <span>{error}</span>
+                                </motion.div>
+                            )}
+                            {success && (
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm font-medium text-[var(--app-success)]">
+                                    <CheckCircle2 size={18} className="shrink-0" />
+                                    <span>{success}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         <div className="space-y-2">
-                            <label className="text-base font-medium text-[#d6e0f8]">Full Name</label>
+                            <label className="text-sm font-semibold text-[var(--app-text)]">Full Name</label>
                             <Input
                                 type="text"
                                 value={fullName}
                                 onChange={(event) => setFullName(event.target.value)}
-                                placeholder="John Doe"
+                                placeholder="Ghost in the Shell"
                                 required
                                 disabled={isBusy}
-                                className="h-12 rounded-xl border-[#31466f] bg-[#1b2c4c] text-base text-white placeholder:text-[#7387b3]"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-base font-medium text-[#d6e0f8]">
-                                Email Address
-                            </label>
+                            <label className="text-sm font-semibold text-[var(--app-text)]">Email Address</label>
                             <Input
                                 type="email"
                                 value={email}
                                 onChange={(event) => setEmail(event.target.value)}
-                                placeholder="john@example.com"
+                                placeholder="you@domain.com"
                                 required
                                 disabled={isBusy}
-                                className="h-12 rounded-xl border-[#31466f] bg-[#1b2c4c] text-base text-white placeholder:text-[#7387b3]"
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-base font-medium text-[#d6e0f8]">Password</label>
-                            <Input
-                                type="password"
-                                value={password}
-                                onChange={(event) => setPassword(event.target.value)}
-                                placeholder="........"
-                                required
-                                disabled={isBusy}
-                                className="h-12 rounded-xl border-[#31466f] bg-[#1b2c4c] text-base text-white placeholder:text-[#7387b3]"
-                                minLength={6}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <div className="grid grid-cols-4 gap-2">
-                                <span
-                                    className={`h-1.5 rounded-full ${
-                                        passwordScore >= 1 ? "bg-[#2389ff]" : "bg-[#32466f]"
-                                    }`}
+                            <label className="text-sm font-semibold text-[var(--app-text)]">Password</label>
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(event) => setPassword(event.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    disabled={isBusy}
+                                    minLength={6}
+                                    className="pr-12"
                                 />
-                                <span
-                                    className={`h-1.5 rounded-full ${
-                                        passwordScore >= 2 ? "bg-[#2389ff]" : "bg-[#32466f]"
-                                    }`}
-                                />
-                                <span
-                                    className={`h-1.5 rounded-full ${
-                                        passwordScore >= 3 ? "bg-[#2389ff]" : "bg-[#32466f]"
-                                    }`}
-                                />
-                                <span
-                                    className={`h-1.5 rounded-full ${
-                                        passwordScore >= 4 ? "bg-[#2389ff]" : "bg-[#32466f]"
-                                    }`}
-                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword((v) => !v)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--app-muted)] hover:text-[var(--app-text)] transition-colors"
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
-                            <p className="flex items-center gap-2 text-sm text-[#8ea2cc]">
-                                <Shield size={14} />
-                                Security level: {passwordLevel}
+                        </div>
+
+                        <div className="space-y-2 bg-[var(--app-surface-subtle)] p-3 rounded-xl border border-[var(--app-line)]">
+                            <div className="grid grid-cols-4 gap-2">
+                                {[1, 2, 3, 4].map((level) => (
+                                    <span
+                                        key={level}
+                                        className={`h-1.5 rounded-full transition-colors duration-300 ${
+                                            passwordScore >= level 
+                                                ? passwordScore < 3 ? "bg-[var(--app-warning)] shadow-[0_0_8px_var(--app-warning)]" : "bg-[var(--app-success)] shadow-[0_0_8px_var(--app-success)]"
+                                                : "bg-[var(--app-line-strong)]"
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                            <p className="flex items-center gap-2 text-xs font-semibold text-[var(--app-text-soft)] mt-2">
+                                <Shield size={14} className={passwordScore >= 3 ? "text-[var(--app-success)]" : "text-[var(--app-muted)]"} />
+                                Security Level: <span className={passwordScore >= 3 ? "text-[var(--app-success)]" : ""}>{passwordLevel}</span>
                             </p>
                         </div>
 
-                        <label className="flex items-start gap-3 text-sm text-[#9eb0d8]">
-                            <input
-                                type="checkbox"
-                                checked={acceptedTerms}
-                                onChange={(event) => setAcceptedTerms(event.target.checked)}
-                                className="mt-0.5 h-4 w-4 rounded border-[#38517d] bg-[#1b2c4c]"
-                            />
-                            <span>
+                        <label className="flex items-start gap-3 text-sm text-[var(--app-text-soft)] cursor-pointer mt-6 group">
+                            <div className="relative flex items-center justify-center mt-0.5 shrink-0">
+                                <input
+                                    type="checkbox"
+                                    checked={acceptedTerms}
+                                    onChange={(event) => setAcceptedTerms(event.target.checked)}
+                                    className="peer appearance-none w-5 h-5 border-2 border-[var(--app-line-strong)] rounded bg-transparent checked:bg-[var(--app-primary)] checked:border-[var(--app-primary)] transition-all cursor-pointer"
+                                />
+                                <div className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white">
+                                    <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                                        <path d="M1 5L4.5 8.5L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span className="leading-tight">
                                 I agree to the{" "}
-                                <Link href="#" className="text-[#3c97ff] hover:underline">
+                                <Link href="#" className="font-semibold text-[var(--app-primary)] hover:text-[var(--app-primary-strong)] hover:underline">
                                     Terms of Service
                                 </Link>{" "}
                                 and{" "}
-                                <Link href="#" className="text-[#3c97ff] hover:underline">
+                                <Link href="#" className="font-semibold text-[var(--app-primary)] hover:text-[var(--app-primary-strong)] hover:underline">
                                     Privacy Policy
                                 </Link>
                                 .
@@ -288,26 +315,26 @@ export default function RegisterPage() {
                         <Button
                             type="submit"
                             disabled={isBusy}
-                            className="h-12 w-full rounded-xl bg-[#2389ff] text-xl font-semibold text-white hover:bg-[#1a73dc]"
+                            className="w-full mt-6 h-12 text-base font-bold shadow-glow text-glow-primary"
                         >
                             {registerMutation.isPending ? (
                                 <>
-                                    <Spinner size={18} className="mr-2 text-current" />
-                                    Creating account...
+                                    <Spinner size={18} className="mr-3 text-white" />
+                                    Creating Node...
                                 </>
                             ) : (
-                                "Create My Account"
+                                "Initialize Account"
                             )}
                         </Button>
                     </form>
 
-                    <p className="pt-2 text-center text-base text-[#8ea1c9]">
-                        Already part of the community?{" "}
-                        <Link href="/login" className="font-semibold text-[#2792ff] hover:underline">
-                            Sign in
+                    <p className="pt-8 text-center text-sm text-[var(--app-text-soft)]">
+                        Already part of the network?{" "}
+                        <Link href="/login" className="font-bold text-[var(--app-primary)] hover:text-[var(--app-primary-strong)] hover:underline">
+                            Access Portal
                         </Link>
                     </p>
-                </div>
+                </motion.div>
             </main>
         </div>
     );

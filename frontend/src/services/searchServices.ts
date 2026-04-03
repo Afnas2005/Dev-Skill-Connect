@@ -38,3 +38,7 @@ export const respondToConnectionRequest = async (
         { action }
     );
 };
+
+export const startDirectConversation = async (targetUserId: string) => {
+    return api.post<ApiResponse<{ id: string }>>(`/chat/conversations/direct/${targetUserId}`);
+};

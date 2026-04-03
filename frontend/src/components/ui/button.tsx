@@ -1,6 +1,7 @@
 import * as React from "react"
 import MuiButton from "@mui/material/Button"
 import { Slot } from "@radix-ui/react-slot"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,25 +11,28 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantClassMap: Record<NonNullable<ButtonProps["variant"]>, string> = {
-    default: "neu-soft text-slate-100 hover:bg-[#253146]",
-    destructive: "neu-soft text-rose-300 hover:bg-[#33242d]",
-    outline: "neu-soft text-slate-200 hover:bg-[#253146]",
-    secondary: "neu-soft text-slate-200 hover:bg-[#253146]",
-    ghost: "bg-transparent text-slate-200 hover:bg-[#20293a] hover:text-slate-100",
-    link: "bg-transparent p-0 text-slate-200 underline-offset-4 hover:underline",
+    default: "border-0 bg-[var(--app-primary)] text-white shadow-[0_0_15px_var(--app-primary-glow)] font-medium hover:bg-[var(--app-primary-strong)]",
+    destructive: "bg-[var(--app-danger)] text-white hover:bg-red-600 shadow-[0_10px_25px_rgba(239,68,68,0.2)]",
+    outline: "bg-white text-[var(--app-text)] border border-[var(--app-line)] hover:bg-[var(--app-surface-subtle)]",
+    secondary: "bg-[var(--app-secondary)] text-slate-950 hover:bg-[var(--app-secondary-strong)] shadow-[0_0_15px_var(--app-secondary-soft)]",
+    ghost: "bg-transparent text-[var(--app-text-soft)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]",
+    link: "bg-transparent p-0 text-[var(--app-primary)] underline-offset-4 hover:underline",
 }
 
 const sizeClassMap: Record<NonNullable<ButtonProps["size"]>, string> = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8",
-    icon: "h-10 w-10 p-0",
+    default: "h-11 px-5 py-2.5",
+    sm: "h-9 rounded-lg px-4",
+    lg: "h-12 rounded-xl px-8 text-base",
+    icon: "h-11 w-11 p-0",
 }
+
+const MotionMuiButton = motion.create(MuiButton)
+const MotionSpan = motion.create("span")
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = "default", size = "default", asChild = false, ...props }, ref) => {
         const classes = cn(
-            "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+            "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] text-sm tracking-wide transition-all duration-300 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
             variantClassMap[variant],
             sizeClassMap[size],
             className
@@ -36,7 +40,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         if (asChild) {
             const Comp = Slot
-            return <Comp className={classes} ref={ref} {...props} />
+            return (
+                <MotionSpan whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="inline-flex">
+                    
+                    <Comp className={classes} ref={ref} {...props} />
+                </MotionSpan>
+            )
         }
 
         const muiVariant =
@@ -45,12 +54,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             variant === "destructive" ? "error" : variant === "secondary" ? "secondary" : "primary"
 
         return (
-            <MuiButton
+            <MotionMuiButton
                 ref={ref}
                 variant={muiVariant}
+                // @ts-expect-error MUI color prop is narrowed differently than our variant mapping.
                 color={muiColor}
                 className={classes}
                 disableElevation
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 {...props}
             />
         )

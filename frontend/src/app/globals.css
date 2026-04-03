@@ -1,168 +1,395 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-surface: #1b2230;
-  --color-surface-muted: #20293a;
-  --color-text: #e4ebf7;
-  --color-border: #2c364a;
+  --font-sans: var(--font-dm-sans);
+  --font-heading: var(--font-sora);
+  --animate-fade-in: fadeIn 0.5s ease-out forwards;
+  --animate-slide-up: slideUp 0.5s ease-out forwards;
+  --animate-glow: glow 2s infinite alternate;
 }
 
 @layer base {
   :root {
-    --background: 222 29% 14%;
-    --foreground: 216 44% 91%;
-    --neu-surface: #1b2230;
-    --neu-surface-soft: #20293a;
-    --neu-text: #e4ebf7;
-    --neu-shadow-dark: #121722;
-    --neu-shadow-light: #1d2534;
-    --neu-radius: 18px;
-    --neu-shadow: 0 12px 24px rgba(5, 8, 14, 0.55);
-    --neu-shadow-soft: 0 8px 16px rgba(6, 10, 18, 0.45);
-    --neu-shadow-inset: inset 0 2px 8px rgba(7, 10, 16, 0.65);
-    font-size: 14px;
+    --background: 210 40% 98%;
+    --foreground: 215 25% 20%;
+
+    --app-bg: #F8FAFC;
+    --app-surface: #FFFFFF;
+    --app-surface-strong: #FFFFFF;
+    --app-surface-soft: #FFFFFF;
+    --app-surface-subtle: #F8FAFC;
+
+    --app-line: #E2E8F0;
+    --app-line-strong: #CBD5E1;
+
+    --app-text: #1E293B;
+    --app-subheading: #475569;
+    --app-text-soft: #475569;
+    --app-muted: #64748B;
+    --app-muted-soft: #94A3B8;
+
+    --app-primary: #2563EB;
+    --app-primary-strong: #1D4ED8;
+    --app-primary-soft: rgba(37, 99, 235, 0.18);
+    --app-primary-glow: rgba(37, 99, 235, 0.16);
+
+    --app-secondary: #3B82F6;
+    --app-secondary-strong: #2563EB;
+    --app-secondary-soft: rgba(59, 130, 246, 0.14);
+
+    --app-success: #22C55E;
+    --app-danger: #EF4444;
+    --app-warning: #F59E0B;
+
+    --app-sidebar: #FFFFFF;
+    --app-topbar: rgba(248, 250, 252, 0.92);
+
+    --app-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    --app-shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.05);
+    --app-shadow-glow: 0 0 0 transparent;
+    --app-shadow-xs: 0 6px 14px rgba(15, 23, 42, 0.05);
+
+    --app-radius-xl: 16px;
+    --app-radius-lg: 16px;
+    --app-radius-md: 10px;
+    --app-radius-sm: 8px;
+
+    font-size: 15px;
+  }
+
+  :root[data-theme="dark"] {
+    --background: 222 84% 5%;
+    --foreground: 210 40% 98%;
+
+    --app-bg:
+      radial-gradient(circle at 18% 18%, rgba(129, 140, 248, 0.22), transparent 24%),
+      radial-gradient(circle at 82% 30%, rgba(45, 212, 191, 0.16), transparent 26%),
+      radial-gradient(circle at 50% 82%, rgba(129, 140, 248, 0.12), transparent 28%),
+      #020617;
+    --app-surface: rgba(30, 41, 59, 0.4);
+    --app-surface-strong: rgba(30, 41, 59, 0.56);
+    --app-surface-soft: rgba(30, 41, 59, 0.34);
+    --app-surface-subtle: rgba(15, 23, 42, 0.5);
+
+    --app-line: rgba(255, 255, 255, 0.1);
+    --app-line-strong: rgba(255, 255, 255, 0.16);
+
+    --app-text: #F8FAFC;
+    --app-subheading: #CBD5E1;
+    --app-text-soft: #CBD5E1;
+    --app-muted: #94A3B8;
+    --app-muted-soft: #94A3B8;
+
+    --app-primary: #818CF8;
+    --app-primary-strong: #6366F1;
+    --app-primary-soft: rgba(129, 140, 248, 0.18);
+    --app-primary-glow: rgba(129, 140, 248, 0.4);
+
+    --app-secondary: #2DD4BF;
+    --app-secondary-strong: #14B8A6;
+    --app-secondary-soft: rgba(45, 212, 191, 0.18);
+
+    --app-success: #22C55E;
+    --app-danger: #EF4444;
+    --app-warning: #F59E0B;
+
+    --app-sidebar: rgba(15, 23, 42, 0.72);
+    --app-topbar: rgba(15, 23, 42, 0.68);
+
+    --app-shadow: 0 20px 45px rgba(2, 6, 23, 0.42);
+    --app-shadow-soft: 0 10px 30px rgba(2, 6, 23, 0.34);
+    --app-shadow-glow: 0 0 18px var(--app-primary-glow);
+    --app-shadow-xs: 0 8px 20px rgba(2, 6, 23, 0.28);
+  }
+
+  html {
+    background: hsl(var(--background));
+    color-scheme: light;
+    scroll-behavior: smooth;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
   }
 
   body {
-    background: #121722;
-    color: var(--neu-text);
+    min-height: 100vh;
+    background: var(--app-bg);
+    color: var(--app-muted);
+    font-family: var(--font-dm-sans), "DM Sans", "Segoe UI", sans-serif;
     font-feature-settings: "ss01" on, "cv03" on;
-  }
-
-  * {
-    border-color: var(--color-border);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   a {
-    transition: color 180ms ease, transform 180ms ease;
+    color: var(--app-primary);
+    text-decoration: none;
+    transition: color 0.3s ease, transform 0.3s ease;
   }
 
   button,
-  .MuiButton-root {
-    border: 0 !important;
-    border-radius: 14px !important;
-    background: var(--neu-surface-soft) !important;
-    color: var(--neu-text) !important;
-    box-shadow: var(--neu-shadow-soft) !important;
-    transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease !important;
+  input,
+  textarea,
+  select {
+    font: inherit;
   }
 
-  button:hover,
-  .MuiButton-root:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(5, 8, 14, 0.6) !important;
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--app-primary-soft), 0 0 0 1px var(--app-primary);
   }
 
-  button:active,
-  .MuiButton-root:active {
-    transform: translateY(0);
-    box-shadow: var(--neu-shadow-inset) !important;
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
   }
 
   input,
   textarea,
   select,
   .MuiOutlinedInput-root {
-    border: 0 !important;
-    border-radius: 14px !important;
-    background: var(--neu-surface) !important;
-    color: var(--neu-text) !important;
-    box-shadow: var(--neu-shadow-inset) !important;
-    transition: box-shadow 220ms ease, transform 220ms ease !important;
+    border: 1px solid var(--app-line) !important;
+    border-radius: var(--app-radius-md) !important;
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    box-shadow: none !important;
+    transition: all 0.3s ease !important;
   }
 
   input:focus,
   textarea:focus,
-  select:focus {
+  select:focus,
+  .MuiOutlinedInput-root.Mui-focused {
     outline: none;
-    box-shadow: inset 0 2px 8px rgba(7, 10, 16, 0.7), 0 0 0 2px rgba(121, 156, 207, 0.2) !important;
+    border-color: var(--app-primary) !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+    background: var(--app-surface) !important;
   }
 
-  main section,
-  main article,
-  main aside,
-  main .MuiCard-root,
-  header,
-  nav {
-    border: 0 !important;
-    border-radius: var(--neu-radius) !important;
-    background: var(--neu-surface) !important;
-    box-shadow: var(--neu-shadow) !important;
-    overflow: hidden;
-    transition: box-shadow 220ms ease, transform 220ms ease, background-color 220ms ease !important;
+  ::placeholder {
+    color: var(--app-muted-soft);
   }
 
-  main section:hover,
-  main article:hover,
-  main aside:hover,
-  main .MuiCard-root:hover {
-    box-shadow: 0 14px 28px rgba(5, 8, 14, 0.65) !important;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--app-text);
+    font-family: var(--font-sora), "Sora", "Segoe UI", sans-serif;
+    letter-spacing: -0.03em;
+    font-weight: 600;
   }
 
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#0"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#1"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#2"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#3"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#4"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#5"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#6"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#7"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#8"],
-  :where(div, section, article, aside, header, nav, main, footer)[class*="bg-[#9"] {
-    background: var(--neu-surface) !important;
-    box-shadow: var(--neu-shadow-soft) !important;
+  h1 {
+    font-size: clamp(1.75rem, 2vw + 1rem, 2rem);
   }
 
-  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-white"],
-  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-[#d"],
-  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-[#e"],
-  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-[#f"] {
-    color: var(--neu-text) !important;
+  h2 {
+    font-size: clamp(1.25rem, 1.2vw + 1rem, 1.5rem);
   }
 
-  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-zinc"],
-  :where(div, p, span, h1, h2, h3, h4, h5, h6, a, label)[class*="text-slate"] {
-    color: var(--neu-text) !important;
+  p,
+  li,
+  label,
+  small {
+    color: var(--app-muted);
   }
 
-  main * {
-    min-width: 0;
+  .MuiPaper-root,
+  .MuiDialog-paper,
+  .MuiMenu-paper,
+  .MuiPopover-paper {
+    border: 1px solid var(--app-line) !important;
+    border-radius: var(--app-radius-xl) !important;
+    background: var(--app-surface-strong) !important;
+    box-shadow: var(--app-shadow-soft) !important;
+    color: var(--app-text) !important;
   }
 
-  main :is(h1, h2, h3, h4, h5, h6, p, span, a, button, label) {
-    overflow-wrap: anywhere;
-    word-break: break-word;
+  .MuiTypography-root {
+    color: var(--app-text) !important;
+  }
+
+  .heading {
+    color: #1E293B;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+
+  .text {
+    color: #64748B;
   }
 }
 
 @layer utilities {
-  .neu-surface {
-    background: var(--neu-surface);
-    border-radius: var(--neu-radius);
-    box-shadow: var(--neu-shadow);
+  .app-shell {
+    min-height: 100vh;
+    background: var(--app-bg);
   }
 
-  .neu-soft {
-    background: var(--neu-surface-soft);
-    border-radius: 14px;
-    box-shadow: var(--neu-shadow-soft);
+  .app-sidebar {
+    background: var(--app-sidebar);
+    color: var(--app-text);
+    border-right: 1px solid var(--app-line);
   }
 
-  .neu-inset {
-    background: var(--neu-surface);
-    border-radius: 14px;
-    box-shadow: var(--neu-shadow-inset);
+  .app-topbar {
+    border-bottom: 1px solid var(--app-line);
+    background: var(--app-topbar);
   }
 
-  .neu-hover {
-    transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+  .app-card {
+    border: 1px solid var(--app-line);
+    border-radius: 16px;
+    background: #FFFFFF;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
   }
 
-  .neu-hover:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 28px rgba(5, 8, 14, 0.65);
+  .app-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+  }
+
+  :root[data-theme="dark"] .app-card {
+    background: var(--app-surface);
+    box-shadow: var(--app-shadow-soft);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  :root[data-theme="dark"] .app-card:hover {
+    box-shadow: var(--app-shadow), var(--app-shadow-glow);
+  }
+
+  .app-glass {
+    background: #FFFFFF;
+    border: 1px solid var(--app-line);
+    box-shadow: var(--app-shadow-soft);
+  }
+
+  .app-glass-strong {
+    background: #FFFFFF;
+    border: 1px solid var(--app-line);
+    box-shadow: var(--app-shadow);
+  }
+
+  :root[data-theme="dark"] .app-glass,
+  :root[data-theme="dark"] .app-glass-strong {
+    background: var(--app-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .text-glow-primary {
+    text-shadow: 0 0 20px var(--app-primary-glow);
+  }
+
+  .text-glow-secondary {
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--app-primary) 0%, var(--app-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-secondary {
+    background: linear-gradient(135deg, var(--app-secondary) 0%, var(--app-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .app-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .app-title {
+    font-size: clamp(1.75rem, 2vw + 1rem, 2rem);
+    font-family: var(--font-sora), "Sora", "Segoe UI", sans-serif;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    color: var(--app-text);
+  }
+
+  .app-subtitle {
+    color: var(--app-subheading);
+    font-family: var(--font-dm-sans), "DM Sans", "Segoe UI", sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .btn-primary {
+    background: #2563EB;
+    color: #FFFFFF;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 500;
+    transition: 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: scale(1.05);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.95);
+  }
+
+  .input {
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 10px;
+    outline: none;
+    background: #FFFFFF;
+  }
+
+  .input:focus {
+    border-color: #6366F1;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  }
+
+  .micro-hover {
+    transition: transform 0.3s ease;
+  }
+
+  .micro-hover:hover {
+    transform: scale(1.02);
+  }
+
+  .micro-press:active {
+    transform: scale(0.95);
   }
 
   .no-scrollbar {
@@ -173,4 +400,19 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 10px var(--app-primary-soft); }
+  to { box-shadow: 0 0 20px var(--app-primary-glow); }
 }

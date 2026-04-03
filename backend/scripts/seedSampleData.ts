@@ -2,13 +2,13 @@ import path from "path";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
-import { connectDB } from "../config/db";
-import User from "../models/User";
-import Skill from "../models/Skill";
-import Post from "../models/Post";
-import Setting from "../models/Setting";
-import Notification from "../models/Notification";
-import ConnectionRequest from "../models/ConnectionRequest";
+import { connectDB } from "../src/config/db";
+import User from "../src/models/User";
+import Skill from "../src/models/Skill";
+import Post from "../src/models/Post";
+import Setting from "../src/models/Setting";
+import Notification from "../src/models/Notification";
+import ConnectionRequest from "../src/models/ConnectionRequest";
 
 const dotenvPaths = [
     path.resolve(process.cwd(), ".env"),

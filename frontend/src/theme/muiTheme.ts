@@ -1,78 +1,131 @@
 import { createTheme } from "@mui/material/styles";
+import type { AppTheme } from "@/store/themeStore";
 
-export const muiTheme = createTheme({
-    palette: {
-        mode: "dark",
-        primary: {
-            main: "#7ea2d9",
+export const createAppMuiTheme = (themeMode: AppTheme) => {
+    const isDark = themeMode === "dark";
+
+    return createTheme({
+        palette: {
+            mode: isDark ? "dark" : "light",
+            primary: {
+                main: isDark ? "#818CF8" : "#2563EB",
+            },
+            secondary: {
+                main: isDark ? "#2DD4BF" : "#3B82F6",
+            },
+            background: {
+                default: isDark ? "#020617" : "#F8FAFC",
+                paper: isDark ? "rgba(30, 41, 59, 0.4)" : "#FFFFFF",
+            },
+            text: {
+                primary: isDark ? "#F8FAFC" : "#1E293B",
+                secondary: isDark ? "#94A3B8" : "#64748B",
+            },
+            success: {
+                main: "#22C55E",
+            },
+            error: {
+                main: "#EF4444",
+            },
         },
-        secondary: {
-            main: "#9aaac2",
+        shape: {
+            borderRadius: isDark ? 18 : 16,
         },
-        background: {
-            default: "#171d2a",
-            paper: "#1b2230",
+        typography: {
+            fontFamily: "var(--font-dm-sans), 'DM Sans', 'Segoe UI', sans-serif",
+            h1: {
+                fontFamily: "var(--font-sora), 'Sora', 'Segoe UI', sans-serif",
+                color: isDark ? "#F8FAFC" : "#1E293B",
+                fontSize: "2rem",
+                fontWeight: 600,
+            },
+            h2: {
+                fontFamily: "var(--font-sora), 'Sora', 'Segoe UI', sans-serif",
+                color: isDark ? "#F8FAFC" : "#1E293B",
+                fontSize: "1.5rem",
+                fontWeight: 600,
+            },
+            h3: {
+                fontFamily: "var(--font-sora), 'Sora', 'Segoe UI', sans-serif",
+                color: isDark ? "#F8FAFC" : "#1E293B",
+                fontWeight: 600,
+            },
+            h4: {
+                fontFamily: "var(--font-sora), 'Sora', 'Segoe UI', sans-serif",
+                color: isDark ? "#F8FAFC" : "#1E293B",
+                fontWeight: 600,
+            },
+            h5: {
+                fontFamily: "var(--font-sora), 'Sora', 'Segoe UI', sans-serif",
+                color: isDark ? "#F8FAFC" : "#1E293B",
+                fontWeight: 600,
+            },
+            h6: {
+                fontFamily: "var(--font-sora), 'Sora', 'Segoe UI', sans-serif",
+                color: isDark ? "#F8FAFC" : "#1E293B",
+                fontWeight: 600,
+            },
+            body1: {
+                fontSize: "1rem",
+                color: isDark ? "#94A3B8" : "#64748B",
+            },
+            body2: {
+                fontSize: "0.875rem",
+                color: isDark ? "#94A3B8" : "#64748B",
+            },
+            button: {
+                textTransform: "none",
+                fontWeight: 500,
+            },
         },
-        text: {
-            primary: "#e4ebf7",
-            secondary: "#a7b4ca",
-        },
-    },
-    shape: {
-        borderRadius: 18,
-    },
-    typography: {
-        fontFamily: "var(--font-geist-sans), Segoe UI, sans-serif",
-        button: {
-            textTransform: "none",
-            fontWeight: 600,
-        },
-    },
-    components: {
-        MuiCssBaseline: {
-            styleOverrides: {
-                body: {
-                    background: "#121722",
+        components: {
+            MuiCard: {
+                styleOverrides: {
+                    root: {
+                        border: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid #E2E8F0",
+                        borderRadius: isDark ? 18 : 16,
+                        background: isDark ? "rgba(30, 41, 59, 0.4)" : "#FFFFFF",
+                        boxShadow: isDark
+                            ? "0 10px 30px rgba(2, 6, 23, 0.34)"
+                            : "0 10px 25px rgba(0, 0, 0, 0.05)",
+                        backdropFilter: isDark ? "blur(12px)" : "none",
+                    },
                 },
             },
-        },
-        MuiCard: {
-            styleOverrides: {
-                root: {
-                    border: "none",
-                    borderRadius: 18,
-                    background: "#1b2230",
-                    boxShadow: "0 12px 24px rgba(5, 8, 14, 0.55)",
+            MuiButton: {
+                defaultProps: {
+                    disableElevation: true,
                 },
-            },
-        },
-        MuiButton: {
-            defaultProps: {
-                disableElevation: true,
-            },
-            styleOverrides: {
-                root: {
-                    border: "none",
-                    borderRadius: 14,
-                    background: "#20293a",
-                    color: "#e4ebf7",
-                    boxShadow: "0 8px 16px rgba(6, 10, 18, 0.45)",
-                    transition: "transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease",
-                },
-            },
-        },
-        MuiOutlinedInput: {
-            styleOverrides: {
-                root: {
-                    border: "none",
-                    borderRadius: 14,
-                    background: "#1b2230",
-                    boxShadow: "inset 0 2px 8px rgba(7, 10, 16, 0.65)",
-                    "& .MuiOutlinedInput-notchedOutline": {
+                styleOverrides: {
+                    root: {
                         border: "none",
+                        borderRadius: 10,
+                        background: isDark ? "#818CF8" : "#2563EB",
+                        color: isDark ? "#020617" : "#FFFFFF",
+                        boxShadow: isDark
+                            ? "0 0 15px rgba(129, 140, 248, 0.4)"
+                            : "0 10px 25px rgba(37, 99, 235, 0.22)",
+                        transition:
+                            "transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease",
+                    },
+                },
+            },
+            MuiOutlinedInput: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: 10,
+                        background: isDark ? "rgba(30, 41, 59, 0.4)" : "#FFFFFF",
+                        border: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid #E2E8F0",
+                        boxShadow: isDark
+                            ? "none"
+                            : "none",
+                        backdropFilter: isDark ? "blur(12px)" : "none",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                            border: "none",
+                        },
                     },
                 },
             },
         },
-    },
-});
+    });
+};

@@ -2,53 +2,29 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import {
-    Bell,
-    ChevronDown,
-    Code2,
-    Compass,
-    FileText,
-    Grid3X3,
-    House,
-    MessageSquare,
-    Plus,
-    Search,
-    Settings,
-    UploadCloud,
-    User,
-    X,
-} from "lucide-react";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { motion, AnimatePresence } from "framer-motion";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { EditSkillModal } from "@/components/skills/edit-skill-modal";
 import { Spinner } from "@/components/ui/spinner";
-import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToastStore } from "@/store/toastStore";
-import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 import { createSkill, deleteSkill, getMySkills, updateSkill } from "@/services/skillServices";
 import { updateMyProfile } from "@/services/profileServices";
 import { uploadResume, uploadSkillAttachments } from "@/services/uploadServices";
 import type { Skill, SkillPayload } from "@/types/domain";
+import { Plus, UploadCloud, Grid3X3, FileText, X, ChevronDown, PenLine, Trash2 } from "lucide-react";
 
-const leftNav = [
-    { href: "/dashboard", label: "Feed", icon: House },
-    { href: "/profile", label: "My Profile", icon: User },
-    { href: "/skills", label: "My Skills", icon: Code2, active: true },
-    { href: "/search", label: "Explore", icon: Compass },
-    { href: "/messager", label: "Messager", icon: MessageSquare },
-    { href: "/notifications", label: "Notifications", icon: Bell },
-    { href: "/settings", label: "Settings", icon: Settings },
-];
-
-const filters = ["All Skills", "Frontend", "Backend", "DevOps", "Systems Design"];
+const filters = ["All Talents", "Frontend", "Backend", "Systems Design"];
 
 function levelToPercent(level: Skill["level"]) {
     if (level === "advanced") return 92;
     if (level === "intermediate") return 76;
     return 62;
 }
+
+const staggerList = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
+const fadeUp = { hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1, transition: { duration: 0.3 } } };
 
 export default function SkillsPage() {
     const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
@@ -57,63 +33,36 @@ export default function SkillsPage() {
     const [addProficiency, setAddProficiency] = useState(7);
     const [addDescription, setAddDescription] = useState("");
     const [addFiles, setAddFiles] = useState<File[]>([]);
+    
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [showResumeModal, setShowResumeModal] = useState(false);
+    
     const queryClient = useQueryClient();
     const pushToast = useToastStore((state) => state.pushToast);
-    const user = useAuthStore((state) => state.user);
 
-    const skillsQuery = useQuery({
-        queryKey: ["skills", "me"],
-        queryFn: getMySkills,
-    });
+    const skillsQuery = useQuery({ queryKey: ["skills", "me"], queryFn: getMySkills });
 
     const addMutation = useMutation({
-        mutationFn: async ({
-            payload,
-            files,
-        }: {
-            payload: SkillPayload;
-            files: File[];
-        }) => {
+        mutationFn: async ({ payload, files }: { payload: SkillPayload; files: File[] }) => {
             let attachments = payload.attachments || [];
             if (files.length > 0) {
                 const upload = await uploadSkillAttachments(files);
                 attachments = upload.data.urls;
             }
-
-            return createSkill({
-                ...payload,
-                attachments,
-            });
+            return createSkill({ ...payload, attachments });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["skills", "me"] });
-            queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
+            queryClient.invalidateQueries({ queryKey: ["skills"] });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
             setShowAddForm(false);
             resetAddForm();
-            pushToast({
-                type: "success",
-                title: "Skill added",
-            });
+            pushToast({ type: "success", title: "Skill initialized" });
         },
-        onError: () =>
-            pushToast({
-                type: "error",
-                title: "Unable to add skill",
-            }),
+        onError: () => pushToast({ type: "error", title: "Failed to initialize skill" }),
     });
 
     const editMutation = useMutation({
-        mutationFn: async ({
-            id,
-            payload,
-            files,
-        }: {
-            id: string;
-            payload: SkillPayload;
-            files: File[];
-        }) => {
+        mutationFn: async ({ id, payload, files }: { id: string; payload: SkillPayload; files: File[] }) => {
             let attachments = payload.attachments || [];
             if (files.length > 0) {
                 const upload = await uploadSkillAttachments(files);
@@ -123,35 +72,21 @@ export default function SkillsPage() {
         },
         onSuccess: () => {
             setEditingSkill(null);
-            queryClient.invalidateQueries({ queryKey: ["skills", "me"] });
-            queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
-            pushToast({
-                type: "success",
-                title: "Skill updated",
-            });
+            queryClient.invalidateQueries({ queryKey: ["skills"] });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            pushToast({ type: "success", title: "Skill matrix updated" });
         },
-        onError: () =>
-            pushToast({
-                type: "error",
-                title: "Unable to update skill",
-            }),
+        onError: () => pushToast({ type: "error", title: "Update failed" }),
     });
 
     const deleteMutation = useMutation({
         mutationFn: deleteSkill,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["skills", "me"] });
-            queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
-            pushToast({
-                type: "success",
-                title: "Skill deleted",
-            });
+            queryClient.invalidateQueries({ queryKey: ["skills"] });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            pushToast({ type: "success", title: "Skill purged" });
         },
-        onError: () =>
-            pushToast({
-                type: "error",
-                title: "Unable to delete skill",
-            }),
+        onError: () => pushToast({ type: "error", title: "Purge failed" }),
     });
 
     const resumeMutation = useMutation({
@@ -160,559 +95,264 @@ export default function SkillsPage() {
             return updateMyProfile({ resumeUrl: upload.data.url });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
             setResumeFile(null);
             setShowResumeModal(false);
-            pushToast({
-                type: "success",
-                title: "Resume uploaded",
-            });
+            pushToast({ type: "success", title: "Resume data secured" });
         },
-        onError: () =>
-            pushToast({
-                type: "error",
-                title: "Resume upload failed",
-            }),
+        onError: () => pushToast({ type: "error", title: "Upload malfunctioned" }),
     });
 
     const skills = skillsQuery.data?.data || [];
-    const mastery = skills.length
-        ? Math.round(skills.reduce((acc, skill) => acc + levelToPercent(skill.level), 0) / skills.length)
-        : 75;
+    const mastery = skills.length ? Math.round(skills.reduce((acc, s) => acc + levelToPercent(s.level), 0) / skills.length) : 75;
     const frontendPct = skills.length ? Math.min(95, mastery + 8) : 85;
     const architecturePct = skills.length ? Math.max(65, mastery + 1) : 78;
     const infraPct = skills.length ? Math.max(55, mastery - 13) : 62;
 
-    const proficiencyToLevel = (value: number): Skill["level"] => {
-        if (value <= 3) return "beginner";
-        if (value <= 7) return "intermediate";
-        return "advanced";
-    };
-
-    const resetAddForm = () => {
-        setAddSkillName("");
-        setAddProficiency(7);
-        setAddDescription("");
-        setAddFiles([]);
-    };
-
-    const handleImportResume = () => {
-        if (!resumeFile) {
-            pushToast({
-                type: "error",
-                title: "Select a resume",
-                description: "Choose a PDF, DOC, or DOCX file to upload.",
-            });
-            return;
-        }
-        resumeMutation.mutate(resumeFile);
-    };
+    const proficiencyToLevel = (val: number): Skill["level"] => val <= 3 ? "beginner" : val <= 7 ? "intermediate" : "advanced";
+    const resetAddForm = () => { setAddSkillName(""); setAddProficiency(7); setAddDescription(""); setAddFiles([]); };
 
     const submitAddSkill = () => {
-        const trimmedName = addSkillName.trim();
-        if (!trimmedName) {
-            pushToast({
-                type: "error",
-                title: "Skill name is required",
-            });
+        if (!addSkillName.trim()) {
+            pushToast({ type: "error", title: "Skill Identifier is required" });
             return;
         }
-
         addMutation.mutate({
             payload: {
-                skillName: trimmedName,
+                skillName: addSkillName.trim(),
                 level: proficiencyToLevel(addProficiency),
-                description: addDescription.trim(),
+                description: addDescription.trim() || undefined,
             },
             files: addFiles,
         });
     };
 
     return (
-        <ProtectedRoute>
-            <div className="h-screen overflow-hidden bg-[#020617] text-[#e2e8f0]">
-                <div className="flex h-screen w-full">
-                    <aside className="sticky top-0 hidden h-screen w-[250px] flex-col border-r border-[#1d3557] bg-[#0a172c] p-4 lg:flex">
-                        <div className="mb-8 flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2563eb] text-white">
-                                <Code2 size={18} />
-                            </div>
-                            <p className="text-2xl font-semibold text-white">DevConnect</p>
-                        </div>
+        <DashboardLayout>
+            <div className="mx-auto w-full max-w-6xl">
+                <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-5 app-card p-6 border-[var(--app-line)] overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(circle,var(--app-primary-strong)_0%,transparent_60%)] opacity-20 pointer-events-none rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
+                    <div className="relative z-10">
+                        <h1 className="text-4xl font-extrabold text-[var(--app-text)] drop-shadow-sm">Technical Arsenal</h1>
+                        <p className="mt-2 text-[0.95rem] text-[var(--app-muted)] max-w-xl">
+                            Quantify and showcase your professional technical capabilities. Upload verified evidence to increase your overall node rating.
+                        </p>
+                    </div>
+                    <div className="relative z-10 shrink-0">
+                        <Button
+                            onClick={() => setShowResumeModal(true)}
+                            className="h-11 rounded-xl bg-white text-black hover:bg-white/90 font-bold px-6 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                        >
+                            <UploadCloud size={16} className="mr-2" />
+                            Secure Resume Drop
+                        </Button>
+                    </div>
+                </header>
 
-                        <nav className="space-y-1">
-                            {leftNav.map((item) => {
-                                const Icon = item.icon;
+                <div className="mb-8 flex flex-wrap gap-2">
+                    {filters.map((label, i) => (
+                        <button key={label} className={cn("inline-flex items-center gap-2 rounded-[12px] border px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all shadow-sm", i === 0 ? "border-[var(--app-primary-glow)] bg-[var(--app-primary-soft)] text-[var(--app-primary)]" : "border-[var(--app-line)] app-glass text-[var(--app-muted)] hover:border-[var(--app-text-soft)] hover:text-[var(--app-text)]")}>
+                            {i === 0 && <Grid3X3 size={14} />} {label}
+                        </button>
+                    ))}
+                </div>
+
+                {skillsQuery.isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <Spinner size={32} className="text-[var(--app-primary)]" />
+                    </div>
+                ) : (
+                    <>
+                        <motion.section variants={staggerList} initial="hidden" animate="show" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            <motion.button variants={fadeUp} onClick={() => setShowAddForm(true)} className="flex min-h-[260px] flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-[var(--app-primary-soft)] bg-[var(--app-primary)]/5 text-center group transition-all hover:bg-[var(--app-primary)]/10">
+                                <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--app-primary)] text-white shadow-glow group-hover:scale-110 transition-transform">
+                                    <Plus size={32} />
+                                </span>
+                                <p className="text-xl font-extrabold text-[var(--app-text)]">Install Skill</p>
+                                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-[var(--app-primary)]">Expand Matrix</p>
+                            </motion.button>
+
+                            {skills.map((skill) => {
+                                const pct = levelToPercent(skill.level);
                                 return (
-                                    <Link
-                                        key={item.label}
-                                        href={item.href}
-                                        className={cn(
-                                            "flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors",
-                                            item.active
-                                                ? "bg-[#1e293b] text-white"
-                                                : "text-[#8aa0c2] hover:bg-[#122541] hover:text-[#d7e7ff]"
-                                        )}
-                                    >
-                                        <Icon size={18} />
-                                        {item.label}
-                                    </Link>
+                                    <motion.article key={skill._id} variants={fadeUp} className="rounded-[24px] border border-[var(--app-line)] bg-[var(--app-surface)] p-6 shadow-sm overflow-hidden relative group hover:border-[var(--app-primary-soft)] transition-colors">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--app-primary)]/5 rounded-bl-[100px] pointer-events-none group-hover:bg-[var(--app-primary)]/15 transition-colors" />
+                                        
+                                        <div className="mb-5 flex items-start justify-between relative z-10">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--app-primary-strong)] to-[var(--app-primary)] text-sm font-extrabold text-white shadow-glow">
+                                                {skill.skillName.slice(0, 2).toUpperCase()}
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => setEditingSkill(skill)} className="p-2 rounded-lg text-[var(--app-muted)] hover:text-[var(--app-primary)] hover:bg-[var(--app-primary-soft)]">
+                                                    <PenLine size={14} />
+                                                </button>
+                                                <button onClick={() => deleteMutation.mutate(skill._id)} className="p-2 rounded-lg text-[var(--app-muted)] hover:text-red-400 hover:bg-red-500/10">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="relative z-10">
+                                            <p className="text-xl font-extrabold text-[var(--app-text)] truncate">{skill.skillName}</p>
+                                            <span className="mt-2 inline-flex rounded-md bg-[var(--app-success)]/10 border border-[var(--app-success)]/20 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-[var(--app-success)]">
+                                                {skill.level}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="mt-6 relative z-10">
+                                            <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                                                <span className="text-[var(--app-muted)]">Proficiency</span>
+                                                <span className="text-[var(--app-primary)]">{pct}%</span>
+                                            </div>
+                                            <div className="h-2 rounded-full bg-[var(--app-surface-soft)] p-[1px] overflow-hidden border border-[var(--app-line)]">
+                                                <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full rounded-full bg-gradient-to-r from-[var(--app-primary)] to-[#38bdf8] shadow-[0_0_10px_var(--app-primary-glow)]" />
+                                            </div>
+                                        </div>
+                                        <p className="mt-5 text-[0.85rem] leading-relaxed text-[var(--app-text-soft)] line-clamp-2 relative z-10">
+                                            {skill.description || "Core component in current stack."}
+                                        </p>
+                                    </motion.article>
                                 );
                             })}
-                        </nav>
+                        </motion.section>
 
-                        <div className="mt-auto w-full max-w-[220px] self-center rounded-2xl bg-[#f8fafc] p-3 text-[#0f172a]">
-                            <div className="flex items-center gap-3">
-                                <Avatar name={user?.name || user?.email} src={user?.profileImage} />
+                        <section className="mt-10 rounded-[32px] border border-[var(--app-secondary)]/30 bg-gradient-to-br from-[#0a0520] to-[#120a3a] p-8 lg:p-10 shadow-[0_0_40px_rgba(168,85,247,0.1)] relative overflow-hidden isolate">
+                            <div className="absolute -top-40 -right-40 w-96 h-96 bg-[var(--app-secondary)]/20 rounded-full blur-[80px]" />
+                            <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
                                 <div>
-                                    <p className="text-sm font-semibold">{user?.name || "Alex Dev"}</p>
-                                    <p className="text-xs text-[#64748b]">
-                                        @{(user?.email || "alex_fullstack").split("@")[0]}
+                                    <h2 className="text-3xl font-extrabold text-white flex items-center gap-3">
+                                        <span className="w-3 h-3 rounded-full bg-[var(--app-secondary)] shadow-glow animate-pulse" />
+                                        System Analysis
+                                    </h2>
+                                    <p className="mt-3 text-sm font-medium text-[var(--app-muted)] max-w-lg leading-relaxed">
+                                        Based on your current capability matrix, your full-stack readiness indicates high compatibility for senior-level deployment.
                                     </p>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-
-                    <main className="no-scrollbar h-screen w-full flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0">
-                        <div className="mx-auto w-full max-w-[900px] px-4 py-8 md:px-6">
-                            <section className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-[#1a365f] bg-[#1d2a43] p-4">
-                                <div>
-                                    <h1 className="text-5xl font-semibold text-white">Technical Arsenal</h1>
-                                    <p className="mt-2 text-xl text-[#8aa0c2]">
-                                        Manage and showcase your professional technical proficiency.
-                                    </p>
-                                </div>
-                                <div className="flex flex-wrap gap-3">
-                                    <Button
-                                        className="h-10 rounded-xl bg-[#2563eb] px-5 text-sm font-semibold text-white hover:bg-[#1d4ed8]"
-                                        onClick={() => setShowResumeModal(true)}
-                                    >
-                                        <UploadCloud size={14} className="mr-2" />
-                                        Upload Resume
-                                    </Button>
-                                </div>
-                            </section>
-
-                            <div className="mb-6 flex flex-wrap gap-3">
-                                {filters.map((label, index) => (
-                                    <button
-                                        key={label}
-                                        type="button"
-                                        className={cn(
-                                            "inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium",
-                                            index === 0
-                                                ? "border-[#2563eb] bg-[#1d4ed8] text-white"
-                                                : "border-[#1d3b66] bg-[#0c1730] text-[#9bb0cf] hover:border-[#2d4a73] hover:text-[#dce8fa]"
-                                        )}
-                                    >
-                                        {index === 0 ? <Grid3X3 size={14} /> : null}
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {skillsQuery.isLoading ? (
-                                <div className="flex items-center gap-2 text-[#9bb0cf]">
-                                    <Spinner size={18} />
-                                    Loading skills...
-                                </div>
-                            ) : skillsQuery.isError ? (
-                                <div className="rounded-xl border border-red-900/40 bg-red-950/50 p-4 text-sm text-red-300">
-                                    Failed to load skills.
-                                </div>
-                            ) : (
-                                <>
-                                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowAddForm(true)}
-                                            className="flex min-h-[230px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#274a7c] bg-[#040c1f] text-center hover:bg-[#08142a]"
-                                        >
-                                            <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#0f2242] text-[#3b82f6]">
-                                                <Plus size={30} />
-                                            </span>
-                                            <p className="text-3xl font-semibold text-white">Add New Skill</p>
-                                            <p className="mt-2 text-sm text-[#728aaf]">Scale your profile</p>
-                                        </button>
-
-                                        {skills.map((skill) => {
-                                            const pct = levelToPercent(skill.level);
-                                            return (
-                                                <article
-                                                    key={skill._id}
-                                                    className="rounded-2xl border border-[#1a365f] bg-[#0b162e] p-5"
-                                                >
-                                                    <div className="mb-4 flex items-start justify-between gap-3">
-                                                        <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0f2242] text-sm font-bold text-[#9fc2f8]">
-                                                            {skill.skillName.slice(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setEditingSkill(skill)}
-                                                                className="rounded-md bg-[#122744] px-2 py-1 text-xs text-[#a9c6ec] hover:bg-[#1a365f]"
-                                                            >
-                                                                Edit
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => deleteMutation.mutate(skill._id)}
-                                                                className="rounded-md bg-[#331726] px-2 py-1 text-xs text-[#f2b8c8] hover:bg-[#4b1f33]"
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-3xl font-semibold text-white">
-                                                        {skill.skillName}
-                                                    </p>
-                                                    <span className="mt-2 inline-flex rounded-md bg-[#0d3a30] px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#3ad09c]">
-                                                        {skill.level}
-                                                    </span>
-                                                    <div className="mt-5">
-                                                        <div className="mb-1 flex items-center justify-between text-sm">
-                                                            <span className="text-[#7d95bb]">Proficiency</span>
-                                                            <span className="text-[#53a2ff]">{pct}%</span>
-                                                        </div>
-                                                        <div className="h-2 rounded-full bg-[#1c2e4e]">
-                                                            <div
-                                                                style={{ width: `${pct}%` }}
-                                                                className="h-2 rounded-full bg-[#2f6df6]"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <p className="mt-4 text-sm text-[#7d95bb]">
-                                                        {skill.description || "Used in production projects."}
-                                                    </p>
-                                                </article>
-                                            );
-                                        })}
-                                    </section>
-
-                                    <section className="mt-6 rounded-2xl border border-[#1a365f] bg-[#0b162e] p-6">
-                                        <div className="grid gap-6 lg:grid-cols-[1fr_220px]">
-                                            <div>
-                                                <h2 className="text-4xl font-semibold text-white">
-                                                    Overall Proficiency
-                                                </h2>
-                                                <p className="mt-2 text-lg text-[#7f98be]">
-                                                    Based on your current skill set, your full-stack
-                                                    readiness is above average for current market trends.
-                                                </p>
-                                                <div className="mt-6 space-y-4">
-                                                    <div>
-                                                        <div className="mb-1 flex justify-between text-sm">
-                                                            <span className="text-[#c5d6ee]">Frontend Mastery</span>
-                                                            <span className="text-[#55a2ff]">{frontendPct}%</span>
-                                                        </div>
-                                                        <div className="h-2 rounded-full bg-[#1c2e4e]">
-                                                            <div
-                                                                style={{ width: `${frontendPct}%` }}
-                                                                className="h-2 rounded-full bg-[#2f6df6]"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="mb-1 flex justify-between text-sm">
-                                                            <span className="text-[#c5d6ee]">
-                                                                Backend Systems
-                                                            </span>
-                                                            <span className="text-[#55a2ff]">
-                                                                {architecturePct}%
-                                                            </span>
-                                                        </div>
-                                                        <div className="h-2 rounded-full bg-[#1c2e4e]">
-                                                            <div
-                                                                style={{ width: `${architecturePct}%` }}
-                                                                className="h-2 rounded-full bg-[#2f6df6]"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="mb-1 flex justify-between text-sm">
-                                                            <span className="text-[#c5d6ee]">
-                                                                Infrastructure / DevOps
-                                                            </span>
-                                                            <span className="text-[#55a2ff]">{infraPct}%</span>
-                                                        </div>
-                                                        <div className="h-2 rounded-full bg-[#1c2e4e]">
-                                                            <div
-                                                                style={{ width: `${infraPct}%` }}
-                                                                className="h-2 rounded-full bg-[#2f6df6]"
-                                                            />
-                                                        </div>
-                                                    </div>
+                                    <div className="mt-8 space-y-6">
+                                        {[
+                                            { label: "Frontend Architecture", pct: frontendPct },
+                                            { label: "Backend Resilience", pct: architecturePct },
+                                            { label: "DevOps Integration", pct: infraPct }
+                                        ].map((stat, i) => (
+                                            <div key={stat.label}>
+                                                <div className="mb-2 flex justify-between text-xs font-bold uppercase tracking-widest text-[#a855f7]">
+                                                    <span>{stat.label}</span>
+                                                    <span className="text-white">{stat.pct}%</span>
+                                                </div>
+                                                <div className="h-2 rounded-full bg-white/5 p-[1px] border border-white/10">
+                                                    <motion.div initial={{ width: 0 }} animate={{ width: `${stat.pct}%` }} transition={{ duration: 1, delay: i * 0.2 }} className="h-full rounded-full bg-gradient-to-r from-[#a855f7] to-[#e879f9]" />
                                                 </div>
                                             </div>
-                                            <div className="rounded-2xl border border-[#1a365f] bg-[#0e1b35] p-5">
-                                                <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border-8 border-[#2f6df6] text-4xl font-semibold text-white">
-                                                    {mastery}%
-                                                </div>
-                                                <p className="mt-6 text-center text-2xl font-semibold text-[#d9e8ff]">
-                                                    Elite Readiness
-                                                </p>
-                                                <p className="mt-1 text-center text-sm text-[#7f98be]">
-                                                    Top 25% of Developers
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </section>
-                                </>
-                            )}
-                        </div>
-                    </main>
-                </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="rounded-[24px] border border-white/10 app-glass-strong p-8 flex flex-col items-center justify-center relative">
+                                    <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent rounded-[24px] pointer-events-none" />
+                                    <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-[10px] border-[#a855f7] shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+                                        <span className="text-5xl font-extrabold text-white drop-shadow-lg">{mastery}%</span>
+                                    </div>
+                                    <p className="mt-8 text-center text-xl font-extrabold text-white">Elite Readiness</p>
+                                    <p className="mt-1 text-center text-xs font-bold uppercase tracking-widest text-[#a855f7]">Top Tier Protocol</p>
+                                </div>
+                            </div>
+                        </section>
+                    </>
+                )}
             </div>
-            <EditSkillModal
-                skill={editingSkill}
-                loading={editMutation.isPending}
-                onClose={() => setEditingSkill(null)}
-                onSubmit={(payload, files) => {
-                    if (!editingSkill) return;
-                    editMutation.mutate({ id: editingSkill._id, payload, files });
-                }}
-            />
-            {showResumeModal ? (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#020617]/80 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-lg rounded-2xl border border-[#274a7c] bg-[#1b2a3f] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-                        <div className="flex items-start justify-between border-b border-[#2a3d5a] p-5 pb-4">
-                            <div>
-                                <h2 className="text-2xl font-semibold text-white">Upload Resume</h2>
-                                <p className="mt-1 text-sm text-[#8ea5c8]">
-                                    PDF, DOC, or DOCX (max 10MB).
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowResumeModal(false);
-                                    setResumeFile(null);
-                                }}
-                                className="text-[#8ea5c8] hover:text-white"
-                            >
-                                <X size={28} />
-                            </button>
-                        </div>
 
-                        <div className="space-y-4 p-5">
-                            <div className="rounded-xl border border-dashed border-[#36557d] bg-[#101d34] p-4">
-                                <label className="flex cursor-pointer items-center justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <UploadCloud size={22} className="text-[#8ea5c8]" />
-                                        <div>
-                                            <p className="text-sm text-[#d6e3f7]">
-                                                {resumeFile ? resumeFile.name : "Choose a resume file"}
-                                            </p>
-                                            <p className="text-xs text-[#6f86aa]">
-                                                {resumeFile
-                                                    ? `${(resumeFile.size / (1024 * 1024)).toFixed(1)} MB`
-                                                    : "PDF, DOC, DOCX"}
-                                            </p>
+            <EditSkillModal skill={editingSkill} loading={editMutation.isPending} onClose={() => setEditingSkill(null)} onSubmit={(p, f) => { if (editingSkill) editMutation.mutate({ id: editingSkill._id, payload: p, files: f }); }} />
+            
+            {/* Keeping identical forms inside similar modals just styled */}
+            <AnimatePresence>
+                {showResumeModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="w-full max-w-lg rounded-[24px] border border-[var(--app-line)] bg-[var(--app-surface)] shadow-2xl overflow-hidden">
+                            <div className="border-b border-[var(--app-line)] bg-[var(--app-surface-soft)] p-6 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-xl font-extrabold text-[var(--app-text)]">Secure Upload</h2>
+                                    <p className="text-xs text-[var(--app-muted)] mt-1 uppercase tracking-widest font-bold">Encrypted Resume Transfer</p>
+                                </div>
+                                <button onClick={() => { setShowResumeModal(false); setResumeFile(null); }} className="p-2 app-glass rounded-xl text-[var(--app-muted)] hover:text-white border border-[var(--app-line)]"><X size={18} /></button>
+                            </div>
+                            <div className="p-6">
+                                <label className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-[var(--app-primary-soft)] bg-[var(--app-primary)]/5 hover:bg-[var(--app-primary)]/10 transition-colors text-center p-6">
+                                    <UploadCloud size={36} className="text-[var(--app-primary)]" />
+                                    <div>
+                                        <p className="text-sm font-bold text-[var(--app-text)] mb-1">{resumeFile ? resumeFile.name : "Select or drag file here"}</p>
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-[var(--app-muted)]">{resumeFile ? `${(resumeFile.size / 1024 / 1024).toFixed(2)} MB (Ready)` : "PDF, DOCX format supported"}</p>
+                                    </div>
+                                    <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setResumeFile(e.target.files?.[0] || null)} />
+                                </label>
+                            </div>
+                            <div className="border-t border-[var(--app-line)] bg-[var(--app-surface-soft)] p-5 flex justify-end gap-3">
+                                <Button variant="ghost" className="font-bold text-[var(--app-muted)]" onClick={() => { setShowResumeModal(false); setResumeFile(null); }}>Abort</Button>
+                                <Button disabled={resumeMutation.isPending || !resumeFile} onClick={() => resumeMutation.mutate(resumeFile as File)} className="font-bold shadow-glow">
+                                    {resumeMutation.isPending ? "Transmitting..." : "Initialize Upload"}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {showAddForm && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[24px] border border-[var(--app-line)] bg-[var(--app-surface)] shadow-2xl no-scrollbar">
+                            <div className="sticky top-0 z-10 border-b border-[var(--app-line)] bg-[var(--app-surface-soft)]/90 backdrop-blur-md p-6 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-xl font-extrabold text-[var(--app-text)]">Install New Skill module</h2>
+                                    <p className="text-xs text-[var(--app-muted)] mt-1 uppercase tracking-widest font-bold">Enhance Matrix capabilities</p>
+                                </div>
+                                <button onClick={() => { setShowAddForm(false); resetAddForm(); }} className="p-2 app-glass rounded-xl text-[var(--app-muted)] hover:text-white border border-[var(--app-line)]"><X size={18} /></button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                <div>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-[var(--app-muted)]">Identifier (Skill Name)</label>
+                                    <input value={addSkillName} onChange={(e) => setAddSkillName(e.target.value)} placeholder="e.g. Next.js, Rust, Docker" className="h-12 w-full rounded-xl border border-[var(--app-line)] bg-[var(--app-surface-soft)] px-4 text-sm font-bold text-[var(--app-text)] focus:border-[var(--app-primary)] focus:outline-none placeholder:text-[var(--app-muted)] transition-colors" />
+                                </div>
+                                <div>
+                                    <div className="mb-3 flex justify-between items-center">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-[var(--app-muted)]">Proficiency Calibration</label>
+                                        <span className="text-[var(--app-primary)] font-extrabold">{addProficiency}/10</span>
+                                    </div>
+                                    <input type="range" min={1} max={10} value={addProficiency} onChange={(e) => setAddProficiency(Number(e.target.value))} className="h-2 w-full accent-[var(--app-primary)]" />
+                                </div>
+                                <div>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-[var(--app-muted)]">Module Description</label>
+                                    <textarea rows={3} value={addDescription} onChange={(e) => setAddDescription(e.target.value)} placeholder="Elaborate on field experience..." className="w-full resize-none rounded-xl border border-[var(--app-line)] bg-[var(--app-surface-soft)] p-4 text-sm font-medium text-[var(--app-text)] focus:border-[var(--app-primary)] focus:outline-none placeholder:text-[var(--app-muted)] transition-colors" />
+                                </div>
+                                <div>
+                                    <label className="mb-3 block text-xs font-bold uppercase tracking-widest text-[var(--app-muted)]">Verified Evidence (Max 5)</label>
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        <label className="flex h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--app-primary-soft)] bg-[var(--app-primary)]/5 text-[var(--app-primary)] hover:bg-[var(--app-primary)]/10 transition-colors">
+                                            <UploadCloud size={24} className="mb-2" />
+                                            <span className="text-xs font-bold">Upload Logs</span>
+                                            <input type="file" multiple accept=".pdf,image/*" className="hidden" onChange={(e) => setAddFiles(Array.from(e.target.files || []).slice(0, 5))} />
+                                        </label>
+                                        <div className="rounded-xl border border-[var(--app-line)] bg-[var(--app-surface-soft)] p-3 overflow-y-auto max-h-[120px] no-scrollbar">
+                                            {addFiles.length === 0 ? <p className="text-xs font-medium text-[var(--app-muted)] text-center mt-8 inline-block w-full">No evidence attached.</p> : (
+                                                <div className="space-y-2">
+                                                    {addFiles.map((f, i) => (
+                                                        <div key={i} className="flex items-center justify-between rounded-lg bg-[var(--app-surface)] border border-[var(--app-line)] p-2">
+                                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                                <FileText size={14} className="min-w-fit text-[var(--app-primary)]" />
+                                                                <span className="text-[10px] font-bold text-[var(--app-text)] truncate">{f.name}</span>
+                                                            </div>
+                                                            <button onClick={() => setAddFiles(addFiles.filter((_, idx) => idx !== i))} className="text-[var(--app-muted)] hover:text-red-400 min-w-fit ml-2"><X size={12} /></button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <span className="text-sm text-[#7fb2ff]">Browse</span>
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                        className="hidden"
-                                        onChange={(event) =>
-                                            setResumeFile(event.target.files?.[0] || null)
-                                        }
-                                    />
-                                </label>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2.5 border-t border-[#2a3d5a] p-4">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-11 text-[#9bb0cf] hover:bg-[#21314d] hover:text-white"
-                                onClick={() => {
-                                    setShowResumeModal(false);
-                                    setResumeFile(null);
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                className="h-11 rounded-xl bg-[#2684ea] px-6 text-sm font-semibold hover:bg-[#1f72cb]"
-                                disabled={resumeMutation.isPending || !resumeFile}
-                                onClick={handleImportResume}
-                            >
-                                {resumeMutation.isPending ? "Uploading..." : "Upload Resume"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
-            {showAddForm ? (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#020617]/80 p-4 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl rounded-2xl border border-[#274a7c] bg-[#1b2a3f] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-                        <div className="flex items-start justify-between border-b border-[#2a3d5a] p-5 pb-4">
-                            <div>
-                                <h2 className="text-2xl font-semibold text-white">Add / Edit Skill</h2>
-                                <p className="mt-1 text-sm text-[#8ea5c8]">
-                                    Showcase your technical expertise to potential recruiters and
-                                    collaborators.
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowAddForm(false);
-                                    resetAddForm();
-                                }}
-                                className="text-[#8ea5c8] hover:text-white"
-                            >
-                                <X size={28} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-5 p-5">
-                            <div>
-                                <label className="mb-1.5 block text-base text-[#d6e3f7]">Skill Name</label>
-                                <div className="relative">
-                                    <input
-                                        value={addSkillName}
-                                        onChange={(event) => setAddSkillName(event.target.value)}
-                                        placeholder="Search for a skill (e.g. React, TypeScript)"
-                                        className="h-11 w-full rounded-xl border border-[#2a4568] bg-[#101d34] px-4 pr-10 text-base text-[#e7f0fe] placeholder:text-[#6f86aa] focus:border-[#2f6df6] focus:outline-none"
-                                    />
-                                    <ChevronDown
-                                        size={18}
-                                        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#6f86aa]"
-                                    />
                                 </div>
                             </div>
-
-                            <div>
-                                <div className="mb-3 flex items-center justify-between">
-                                    <label className="text-base text-[#d6e3f7]">
-                                        Proficiency Level (1-10)
-                                    </label>
-                                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#16345a] text-base font-semibold text-[#55a2ff]">
-                                        {addProficiency}
-                                    </span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min={1}
-                                    max={10}
-                                    value={addProficiency}
-                                    onChange={(event) => setAddProficiency(Number(event.target.value))}
-                                    className="h-2 w-full accent-[#2f6df6]"
-                                />
-                                <div className="mt-2 flex justify-between text-sm uppercase tracking-wide text-[#6f86aa]">
-                                    <span>Beginner</span>
-                                    <span>Intermediate</span>
-                                    <span>Expert</span>
-                                </div>
+                            <div className="sticky bottom-0 border-t border-[var(--app-line)] bg-[var(--app-surface-soft)] p-5 flex justify-end gap-3 z-10">
+                                <Button variant="ghost" className="font-bold text-[var(--app-muted)]" onClick={() => { setShowAddForm(false); resetAddForm(); }}>Abort</Button>
+                                <Button disabled={addMutation.isPending} onClick={submitAddSkill} className="font-bold shadow-glow"><Plus size={16} className="mr-2" /> Execute Install</Button>
                             </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-base text-[#d6e3f7]">Description</label>
-                                <textarea
-                                    rows={3}
-                                    value={addDescription}
-                                    onChange={(event) => setAddDescription(event.target.value)}
-                                    placeholder="Describe how you use this skill in your projects..."
-                                    className="w-full rounded-xl border border-[#2a4568] bg-[#101d34] px-4 py-3 text-sm text-[#e7f0fe] placeholder:text-[#6f86aa] focus:border-[#2f6df6] focus:outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-base text-[#d6e3f7]">
-                                    Attachments & Proofs
-                                </label>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <label className="flex min-h-[130px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#36557d] bg-[#101d34] text-center">
-                                        <UploadCloud size={30} className="text-[#8ea5c8]" />
-                                        <p className="mt-2 text-lg text-[#9bb0cf]">
-                                            Click to upload or drag & drop
-                                        </p>
-                                        <p className="text-sm text-[#6f86aa]">PDF, PNG, JPG (max. 10MB)</p>
-                                        <input
-                                            type="file"
-                                            multiple
-                                            accept=".pdf,image/png,image/jpeg,image/jpg"
-                                            className="hidden"
-                                            onChange={(event) => {
-                                                const selected = Array.from(event.target.files || []);
-                                                setAddFiles(selected.slice(0, 5));
-                                            }}
-                                        />
-                                    </label>
-                                    <div className="rounded-xl border border-[#2a4568] bg-[#101d34] p-3">
-                                        {addFiles.length === 0 ? (
-                                            <p className="text-sm text-[#6f86aa]">No attachments selected.</p>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {addFiles.map((file, index) => (
-                                                    <div
-                                                        key={`${file.name}-${index}`}
-                                                        className="flex items-center justify-between rounded-lg bg-[#162741] px-3 py-2"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-[#0f3a72] text-[#7fb2ff]">
-                                                                <FileText size={18} />
-                                                            </span>
-                                                            <div>
-                                                                <p className="text-sm text-[#d6e3f7]">
-                                                                    {file.name}
-                                                                </p>
-                                                                <p className="text-xs text-[#6f86aa]">
-                                                                    {(file.size / (1024 * 1024)).toFixed(1)} MB
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            className="text-sm text-[#8ea5c8] hover:text-white"
-                                                            onClick={() =>
-                                                                setAddFiles((prev) =>
-                                                                    prev.filter((_, i) => i !== index)
-                                                                )
-                                                            }
-                                                        >
-                                                            <X size={16} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2.5 border-t border-[#2a3d5a] p-4">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-11 text-[#9bb0cf] hover:bg-[#21314d] hover:text-white"
-                                onClick={() => {
-                                    setShowAddForm(false);
-                                    resetAddForm();
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                className="h-11 rounded-xl bg-[#2684ea] px-6 text-sm font-semibold hover:bg-[#1f72cb]"
-                                disabled={addMutation.isPending}
-                                onClick={submitAddSkill}
-                            >
-                                <Plus size={16} className="mr-2" />
-                                {addMutation.isPending ? "Adding..." : "Add Skill"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
-        </ProtectedRoute>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </DashboardLayout>
     );
 }

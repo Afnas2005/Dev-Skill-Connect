@@ -155,3 +155,47 @@ export type ApiError = {
     error?: string;
     errors?: unknown;
 };
+
+export type ChatContact = {
+    id: string;
+    name: string;
+    email: string;
+    professionalTitle?: string;
+    profileImage?: string;
+    isOnline: boolean;
+};
+
+export type ChatConversation = {
+    id: string;
+    isGroup?: boolean;
+    name?: string;
+    adminId?: string;
+    lastMessageText: string;
+    lastMessageAt: string;
+    participant: ChatContact | null;
+    participants: ChatContact[];
+};
+
+export type ChatMessage = {
+    id: string;
+    conversationId: string;
+    senderId?: string | null;
+    sender?: {
+        id: string;
+        name: string;
+        email: string;
+        profileImage?: string;
+    } | null;
+    content: string;
+    createdAt: string;
+    type?: "text" | "call" | "voice";
+    callMeta?: {
+        callType: "audio" | "video";
+        status: "completed" | "missed" | "declined";
+        durationSeconds?: number;
+    };
+    voiceMeta?: {
+        audioUrl: string;
+        durationSeconds?: number;
+    };
+};

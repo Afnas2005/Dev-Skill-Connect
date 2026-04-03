@@ -3,12 +3,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { useState } from "react";
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { ThemeProvider } from "@mui/material";
 import { Toaster } from "@/components/ui/toaster";
-import { muiTheme } from "@/theme/muiTheme";
+import { useThemeStore } from "@/store/themeStore";
+import { createAppMuiTheme } from "@/theme/muiTheme";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+    const theme = useThemeStore((state) => state.theme);
+    const initializeTheme = useThemeStore((state) => state.initializeTheme);
     const [queryClient] = useState(
         () =>
             new QueryClient({
@@ -22,6 +25,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             })
     );
 
+    useEffect(() => {
+        initializeTheme();
+    }, [initializeTheme]);
+
+    const muiTheme = useMemo(() => createAppMuiTheme(theme), [theme]);
+
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
     const isPlaceholderClientId =
         !googleClientId ||
@@ -33,7 +42,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
     const content = (
         <ThemeProvider theme={muiTheme}>
-            <CssBaseline />
             <QueryClientProvider client={queryClient}>
                 {children}
                 <Toaster />

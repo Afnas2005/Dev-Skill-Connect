@@ -55,3 +55,14 @@ export const uploadResume = async (file: File) => {
         },
     });
 };
+
+export const uploadVoiceNote = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return api.post<ApiResponse<{ url: string }>>("/uploads/voice-note", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+};

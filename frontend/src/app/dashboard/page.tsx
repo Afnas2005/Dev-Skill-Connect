@@ -3,20 +3,15 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
-    Bell,
     Code2,
-    Compass,
     Ellipsis,
-    House,
     Image as ImageIcon,
-    MessageSquare,
-    Settings,
-    User,
     UserPlus,
     Video,
 } from "lucide-react";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
@@ -26,38 +21,43 @@ import { createPost, getFeedPosts } from "@/services/postServices";
 import { uploadPostFiles, uploadPostScreenshots } from "@/services/uploadServices";
 import { searchSkills, sendConnectionRequest } from "@/services/searchServices";
 
-const leftNav = [
-    { href: "/dashboard", label: "Feed", icon: House, active: true },
-    { href: "/profile", label: "My Profile", icon: User },
-    { href: "/skills", label: "My Skills", icon: Code2 },
-    { href: "/search", label: "Explore", icon: Compass },
-    { href: "/messager", label: "Messager", icon: MessageSquare },
-    { href: "/notifications", label: "Notifications", icon: Bell },
-    { href: "/settings", label: "Settings", icon: Settings },
+const trending = [
+    { name: "TypeScript", count: "1.2k posts", width: "w-[90%]", color: "bg-[var(--app-primary)]" },
+    { name: "Next.js 14", count: "850 posts", width: "w-[76%]", color: "bg-[var(--app-success)]" },
+    { name: "Rust", count: "640 posts", width: "w-[62%]", color: "bg-[var(--app-warning)]" },
+    { name: "Kubernetes", count: "420 posts", width: "w-[46%]", color: "bg-[var(--app-secondary)]" },
 ];
 
-const trending = [
-    { name: "TypeScript", count: "1.2k posts", width: "w-[90%]", color: "bg-[#2b80e0]" },
-    { name: "Next.js 14", count: "850 posts", width: "w-[76%]", color: "bg-[#18b07a]" },
-    { name: "Rust", count: "640 posts", width: "w-[62%]", color: "bg-[#ef9b21]" },
-    { name: "Kubernetes", count: "420 posts", width: "w-[46%]", color: "bg-[#4284f3]" },
-];
+const staggerList = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
+const fadeItem = { hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } } };
 
 export default function DashboardPage() {
     const user = useAuthStore((state) => state.user);
     const pushToast = useToastStore((state) => state.pushToast);
     const queryClient = useQueryClient();
+    
+    // State
     const [postContent, setPostContent] = useState("");
     const [postImages, setPostImages] = useState<File[]>([]);
     const [postVideos, setPostVideos] = useState<File[]>([]);
     const [pendingConnectIds, setPendingConnectIds] = useState<string[]>([]);
     const imageInputRef = useRef<HTMLInputElement | null>(null);
     const videoInputRef = useRef<HTMLInputElement | null>(null);
+    
+    // Queries
     const feedQuery = useQuery({
         queryKey: ["posts", "feed", user?.id || "anonymous"],
         queryFn: getFeedPosts,
         refetchOnMount: "always",
     });
+    
+    const suggestionsQuery = useQuery({
+        queryKey: ["suggestions", user?.id || "anonymous"],
+        queryFn: () => searchSkills({}),
+        refetchOnMount: "always",
+    });
+
+    // Mutations
     const createPostMutation = useMutation({
         mutationFn: async (content: string) => {
             let screenshotUrls: string[] = [];
@@ -67,7 +67,6 @@ export default function DashboardPage() {
                 const upload = await uploadPostScreenshots(postImages);
                 screenshotUrls = upload.data.urls;
             }
-
             if (postVideos.length > 0) {
                 const upload = await uploadPostFiles(postVideos);
                 attachmentUrls = upload.data.urls;
@@ -86,441 +85,282 @@ export default function DashboardPage() {
             setPostContent("");
             setPostImages([]);
             setPostVideos([]);
-            pushToast({
-                type: "success",
-                title: "Post published",
-            });
+            pushToast({ type: "success", title: "Post published into the network" });
         },
         onError: (error: unknown) => {
-            const message =
-                typeof error === "object" && error && "message" in error
-                    ? String((error as { message?: string }).message)
-                    : "Could not publish post";
-            pushToast({
-                type: "error",
-                title: message,
-            });
+            const message = typeof error === "object" && error && "message" in error
+                ? String((error as { message?: string }).message)
+                : "Could not publish post";
+            pushToast({ type: "error", title: message });
         },
     });
-    const suggestionsQuery = useQuery({
-        queryKey: ["suggestions", user?.id || "anonymous"],
-        queryFn: () => searchSkills({}),
-        refetchOnMount: "always",
-    });
+
     const connectMutation = useMutation({
         mutationFn: sendConnectionRequest,
         onMutate: (userId: string) => {
-            setPendingConnectIds((prev) =>
-                prev.includes(userId) ? prev : [...prev, userId]
-            );
+            setPendingConnectIds((prev) => prev.includes(userId) ? prev : [...prev, userId]);
             return { userId };
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["suggestions"] });
-            queryClient.invalidateQueries({ queryKey: ["search"] });
-            queryClient.invalidateQueries({ queryKey: ["notifications"] });
             queryClient.invalidateQueries({ queryKey: ["posts", "feed"] });
-            pushToast({
-                type: "success",
-                title: "Connection request sent",
-            });
+            pushToast({ type: "success", title: "Connection request sent" });
         },
         onError: (error: unknown, _vars, context) => {
             if (context?.userId) {
-                setPendingConnectIds((prev) =>
-                    prev.filter((id) => id !== context.userId)
-                );
+                setPendingConnectIds((prev) => prev.filter((id) => id !== context.userId));
             }
-            const message =
-                typeof error === "object" && error && "message" in error
-                    ? String((error as { message?: string }).message)
-                    : "Could not send request";
-            pushToast({
-                type: "error",
-                title: message,
-            });
+            const message = typeof error === "object" && error && "message" in error
+                ? String((error as { message?: string }).message)
+                : "Could not send request";
+            pushToast({ type: "error", title: message });
         },
     });
-    const exploreSuggestions = (suggestionsQuery.data?.data || []).filter(
-        (entry) => entry.user.id !== user?.id
-    );
+
+    // Suggestion logic
+    const exploreSuggestions = (suggestionsQuery.data?.data || []).filter((entry) => entry.user.id !== user?.id);
     const feedFallbackSuggestions = (feedQuery.data?.data || [])
         .map((post) => ({
-            user: {
-                id: post.user.id,
-                name: post.user.name,
-                email: post.user.email,
-                profileImage: post.user.profileImage,
-                professionalTitle: post.user.professionalTitle,
-            },
+            user: { ...post.user },
             connectionStatus: "none" as const,
         }))
         .filter((entry) => entry.user.id !== user?.id);
-    const combinedSuggestions = [...exploreSuggestions, ...feedFallbackSuggestions];
-    const dedupedSuggestions = Array.from(
-        new Map(combinedSuggestions.map((entry) => [String(entry.user.id), entry])).values()
-    );
+    const dedupedSuggestions = Array.from(new Map([...exploreSuggestions, ...feedFallbackSuggestions].map((entry) => [String(entry.user.id), entry])).values());
     const suggestions = dedupedSuggestions.slice(0, 3);
 
     return (
-        <ProtectedRoute>
-            <div className="h-screen overflow-hidden bg-[#0b1220] text-[#d3def1]">
-                <div className="flex h-screen w-full">
-                    <aside className="sticky top-0 hidden h-screen w-[250px] flex-col border-r border-[#1f2c44] bg-[#101a2e] p-4 lg:flex">
-                        <div className="mb-8 flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2b80e0] text-white">
-                                <Code2 size={18} />
-                            </div>
-                            <p className="text-3xl font-semibold text-[#e8f0ff]">DevConnect</p>
-                        </div>
-
-                        <nav className="space-y-1">
-                            {leftNav.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <Link
-                                        key={item.label}
-                                        href={item.href}
-                                        className={cn(
-                                            "flex items-center gap-3 rounded-xl px-4 py-3 text-lg font-medium transition-colors",
-                                            item.active
-                                                ? "bg-[#1b2c49] text-[#6fb3ff]"
-                                                : "text-[#94a7c7] hover:bg-[#17243b] hover:text-[#d8e6ff]"
-                                        )}
-                                    >
-                                        <Icon size={18} />
-                                        {item.label}
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-
-                        <div className="mt-auto rounded-2xl bg-[#16233a] p-4">
-                            <div className="flex items-center gap-3">
-                                <Avatar name={user?.name || user?.email} src={user?.profileImage} />
-                                <div>
-                                    <p className="text-base font-semibold text-[#e6eeff]">
-                                        {user?.name || "Alex Dev"}
-                                    </p>
-                                    <p className="text-sm text-[#93a6c6]">
-                                        @{(user?.email || "alex_fullstack").split("@")[0]}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-
-                    <main className="no-scrollbar h-screen w-full flex-1 overflow-y-auto border-r border-[#1f2c44] p-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0 md:p-6">
-                        <div className="mx-auto w-full max-w-[900px]">
-                        <section className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 shadow-sm md:p-5">
-                            <div className="flex items-start gap-3">
-                                <Avatar name={user?.name || user?.email} src={user?.profileImage} />
-                                <div className="w-full space-y-4">
-                                    <textarea
-                                        value={postContent}
-                                        onChange={(event) => setPostContent(event.target.value)}
-                                        placeholder="Share an update on your latest project..."
-                                        className="h-24 w-full resize-none rounded-2xl border border-[#253652] bg-[#0f1b30] px-4 py-3 text-sm text-[#d3def1] placeholder:text-[#8ea4c8] focus:border-[#2b80e0] focus:outline-none"
-                                        maxLength={3000}
-                                    />
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-5 text-sm font-medium text-[#8da2c4]">
-                                            <button
-                                                type="button"
-                                                className="inline-flex items-center gap-1.5 hover:text-[#cfe0ff]"
-                                                onClick={() => imageInputRef.current?.click()}
-                                            >
-                                                <ImageIcon size={15} className="text-[#2b80e0]" />
-                                                Photo
-                                            </button>
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <Code2 size={15} className="text-[#11a873]" />
-                                                Code
-                                            </span>
-                                            <button
-                                                type="button"
-                                                className="inline-flex items-center gap-1.5 hover:text-[#cfe0ff]"
-                                                onClick={() => videoInputRef.current?.click()}
-                                            >
-                                                <Video size={15} className="text-[#9a57f5]" />
-                                                Video
-                                            </button>
-                                        </div>
-                                        <Button
-                                            onClick={() => {
-                                                const trimmed = postContent.trim();
-                                                if (!trimmed) return;
-                                                createPostMutation.mutate(trimmed);
-                                            }}
-                                            disabled={createPostMutation.isPending || !postContent.trim()}
-                                            className="h-10 rounded-xl bg-[#2b80e0] px-8 text-white hover:bg-[#236abd] disabled:cursor-not-allowed disabled:bg-[#1f3654]"
-                                        >
-                                            {createPostMutation.isPending ? "Posting..." : "Post"}
-                                        </Button>
+        <DashboardLayout>
+            <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 mx-auto w-full max-w-7xl">
+                
+                {/* Main Feed Column */}
+                <div className="flex-1 w-full max-w-3xl min-w-0">
+                    <motion.section
+                        className="app-card p-5 lg:p-6 mb-6"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                    >
+                        <div className="flex items-start gap-4">
+                            <Avatar name={user?.name || user?.email} src={user?.profileImage} />
+                            <div className="w-full space-y-4">
+                                <textarea
+                                    value={postContent}
+                                    onChange={(event) => setPostContent(event.target.value)}
+                                    placeholder="Share your latest system architecture or project update..."
+                                    className="h-28 w-full resize-none rounded-2xl border border-[var(--app-line)] bg-[var(--app-surface-soft)] px-4 py-3 text-[var(--app-text)] placeholder:text-[var(--app-muted)] focus:border-[var(--app-primary)] focus:shadow-[0_0_0_3px_var(--app-primary-soft)] focus:outline-none transition-all"
+                                    maxLength={3000}
+                                />
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4 text-sm font-medium">
+                                        <button type="button" className="flex items-center gap-2 text-[var(--app-text-soft)] hover:text-[var(--app-primary)] transition-colors" onClick={() => imageInputRef.current?.click()}>
+                                            <div className="p-2 app-glass rounded-lg text-[var(--app-primary)]"><ImageIcon size={16} /></div>
+                                            <span className="hidden sm:inline">Image</span>
+                                        </button>
+                                        <button type="button" className="flex items-center gap-2 text-[var(--app-text-soft)] hover:text-[var(--app-success)] transition-colors">
+                                            <div className="p-2 app-glass rounded-lg text-[var(--app-success)]"><Code2 size={16} /></div>
+                                            <span className="hidden sm:inline">Code</span>
+                                        </button>
+                                        <button type="button" className="flex items-center gap-2 text-[var(--app-text-soft)] hover:text-[var(--app-secondary)] transition-colors" onClick={() => videoInputRef.current?.click()}>
+                                            <div className="p-2 app-glass rounded-lg text-[var(--app-secondary)]"><Video size={16} /></div>
+                                            <span className="hidden sm:inline">Video</span>
+                                        </button>
                                     </div>
-                                    <input
-                                        ref={imageInputRef}
-                                        type="file"
-                                        multiple
-                                        accept="image/png,image/jpeg,image/jpg"
-                                        className="hidden"
-                                        onChange={(event) =>
-                                            setPostImages(
-                                                Array.from(event.target.files || []).slice(0, 6)
-                                            )
-                                        }
-                                    />
-                                    <input
-                                        ref={videoInputRef}
-                                        type="file"
-                                        multiple
-                                        accept="video/mp4,video/webm,video/quicktime"
-                                        className="hidden"
-                                        onChange={(event) =>
-                                            setPostVideos(
-                                                Array.from(event.target.files || []).slice(0, 3)
-                                            )
-                                        }
-                                    />
-                                    {(postImages.length > 0 || postVideos.length > 0) && (
-                                        <div className="flex flex-wrap gap-2 text-xs text-[#7f96bd]">
-                                            {postImages.map((file, index) => (
-                                                <span
-                                                    key={`${file.name}-${index}`}
-                                                    className="rounded bg-[#10203f] px-2 py-1"
-                                                >
-                                                    {file.name}
-                                                </span>
-                                            ))}
-                                            {postVideos.map((file, index) => (
-                                                <span
-                                                    key={`${file.name}-${index}`}
-                                                    className="rounded bg-[#10203f] px-2 py-1"
-                                                >
-                                                    {file.name}
-                                                </span>
+                                    <Button
+                                        onClick={() => {
+                                            const trimmed = postContent.trim();
+                                            if (!trimmed) return;
+                                            createPostMutation.mutate(trimmed);
+                                        }}
+                                        disabled={createPostMutation.isPending || !postContent.trim()}
+                                        className="h-10 px-8 text-sm"
+                                    >
+                                        {createPostMutation.isPending ? "Syncing..." : "Transmit"}
+                                    </Button>
+                                </div>
+                                <input ref={imageInputRef} type="file" multiple accept="image/png,image/jpeg,image/jpg" className="hidden" onChange={(e) => setPostImages(Array.from(e.target.files || []).slice(0, 6))} />
+                                <input ref={videoInputRef} type="file" multiple accept="video/mp4,video/webm" className="hidden" onChange={(e) => setPostVideos(Array.from(e.target.files || []).slice(0, 3))} />
+                                
+                                {(postImages.length > 0 || postVideos.length > 0) && (
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                        {postImages.map((f, i) => <span key={i} className="rounded-md app-glass px-2 py-1 border border-[var(--app-line)]">{f.name}</span>)}
+                                        {postVideos.map((f, i) => <span key={i} className="rounded-md app-glass px-2 py-1 border border-[var(--app-line)]">{f.name}</span>)}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.section>
+
+                    <section className="space-y-4">
+                        {feedQuery.isLoading ? (
+                            <div className="app-card p-6 text-center text-[var(--app-muted)] animate-pulse">Syncing feed data...</div>
+                        ) : feedQuery.isError ? (
+                            <div className="app-card border-red-500/30 bg-red-500/10 p-6 text-center text-red-400">Failed to establish connection to the feed.</div>
+                        ) : (feedQuery.data?.data || []).length === 0 ? (
+                            <div className="app-card p-8 text-center text-[var(--app-muted)] border-dashed border-2">Network is silent. Transmit the first signal.</div>
+                        ) : (
+                            <motion.div variants={staggerList} initial="hidden" animate="show" className="space-y-6">
+                            {(feedQuery.data?.data || []).map((post) => (
+                                <motion.article
+                                    key={post._id}
+                                    variants={fadeItem}
+                                    className="app-card p-5 lg:p-6 group relative overflow-hidden"
+                                >
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--app-primary)]/5 rounded-bl-[100px] pointer-events-none group-hover:bg-[var(--app-primary)]/10 transition-colors" />
+                                    <header className="mb-4 flex items-start justify-between relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <Link href={`/profile/${post.user.id}`}>
+                                                <Avatar name={post.user.name || post.user.email} src={post.user.profileImage} />
+                                            </Link>
+                                            <div>
+                                                <Link href={`/profile/${post.user.id}`} className="text-lg font-bold text-[var(--app-text)] hover:text-gradient-primary">
+                                                    {post.user.name || "Developer"}
+                                                </Link>
+                                                <p className="text-xs font-medium text-[var(--app-muted)]">
+                                                    {post.user.professionalTitle || "Full-stack Engineer"} • {new Date(post.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button className="text-[var(--app-muted)] hover:text-[var(--app-text)] p-2 rounded-lg hover:bg-[var(--app-surface-soft)]">
+                                            <Ellipsis size={18} />
+                                        </button>
+                                    </header>
+
+                                    {post.content && (
+                                        <p className="mb-5 whitespace-pre-wrap text-[0.95rem] leading-7 text-[var(--app-text-soft)] relative z-10">
+                                            {post.content}
+                                        </p>
+                                    )}
+
+                                    {post.codeSnippet && (
+                                        <div className="mb-5 rounded-[16px] border border-[var(--app-line)] bg-black/40 p-4 text-sm relative z-10 backdrop-blur-md">
+                                            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--app-primary)]">
+                                                {post.codeLanguage}
+                                            </p>
+                                            <pre className="whitespace-pre-wrap break-words font-mono text-[var(--app-text-soft)]">
+                                                {post.codeSnippet}
+                                            </pre>
+                                        </div>
+                                    )}
+
+                                    {post.screenshots.length > 0 && (
+                                        <div className="mb-5 grid gap-2 relative z-10">
+                                            {post.screenshots.slice(0, 4).map((url) => (
+                                                <img key={url} src={url} alt="Screenshot attachment" className="rounded-[16px] border border-[var(--app-line)] object-cover w-full max-h-[400px]" />
                                             ))}
                                         </div>
                                     )}
-                                </div>
-                            </div>
-                        </section>
 
-                        <section className="mt-5 space-y-5">
-                            {feedQuery.isLoading ? (
-                                <article className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 text-sm text-[#8ea4c8] shadow-sm md:p-5">
-                                    Loading feed...
-                                </article>
-                            ) : feedQuery.isError ? (
-                                <article className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm md:p-5">
-                                    Failed to load feed posts.
-                                </article>
-                            ) : (feedQuery.data?.data || []).length === 0 ? (
-                                <article className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 text-sm text-[#8ea4c8] shadow-sm md:p-5">
-                                    No published posts yet. Create the first post.
-                                </article>
-                            ) : (
-                                (feedQuery.data?.data || []).map((post) => (
-                                    <article
-                                        key={post._id}
-                                        className="rounded-3xl border border-[#23324d] bg-[#121d33] p-4 shadow-sm md:p-5"
-                                    >
-                                        <header className="mb-3 flex items-start justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <Link href={`/profile/${post.user.id}`} className="shrink-0">
-                                                    <Avatar
-                                                        name={post.user.name || post.user.email}
-                                                        src={post.user.profileImage}
-                                                    />
-                                                </Link>
-                                                <div>
-                                                    <Link
-                                                        href={`/profile/${post.user.id}`}
-                                                        className="text-xl font-semibold text-[#e6eeff] hover:text-[#6fb3ff]"
-                                                    >
-                                                        {post.user.name || "Developer"}
-                                                    </Link>
-                                                    <p className="text-sm text-[#90a4c6]">
-                                                        {post.user.professionalTitle ||
-                                                            "Full-stack developer"}{" "}
-                                                        -{" "}
-                                                        {new Date(post.createdAt).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Ellipsis size={18} className="text-[#7f96bd]" />
-                                        </header>
-
-                                        {post.content ? (
-                                            <p className="mb-4 whitespace-pre-wrap text-lg leading-8 text-[#bfcee8]">
-                                                {post.content}
-                                            </p>
-                                        ) : null}
-
-                                        {post.codeSnippet ? (
-                                            <div className="mb-4 rounded-2xl border border-[#2a3d5f] bg-[#0b152b] p-4 text-sm text-[#a9bee0]">
-                                                <p className="mb-2 text-xs uppercase tracking-wider text-[#7f97c0]">
-                                                    {post.codeLanguage}
-                                                </p>
-                                                <pre className="whitespace-pre-wrap break-words font-mono">
-                                                    {post.codeSnippet}
-                                                </pre>
-                                            </div>
-                                        ) : null}
-
-                                        {post.screenshots.length > 0 ? (
-                                            <div className="mb-4 grid gap-2 sm:grid-cols-2">
-                                                {post.screenshots.slice(0, 4).map((url) => (
-                                                    <img
-                                                        key={url}
-                                                        src={url}
-                                                        alt="Post screenshot"
-                                                        className="h-40 w-full rounded-xl border border-[#2a3d5f] object-cover"
-                                                    />
-                                                ))}
-                                            </div>
-                                        ) : null}
-
-                                        <footer className="flex items-center justify-between text-sm font-medium text-[#8da2c4]">
-                                            <div className="flex items-center gap-6">
-                                                <span>Attachments ({post.attachments.length})</span>
-                                                <span className="capitalize">{post.status}</span>
-                                            </div>
-                                            {post.user.connectionStatus !== "pending" &&
-                                            post.user.connectionStatus !== "connected" &&
-                                            !pendingConnectIds.includes(String(post.user.id)) &&
-                                            String(post.user.id) !== String(user?.id) ? (
-                                                <button
-                                                    type="button"
-                                                    className="inline-flex items-center gap-1 rounded-lg border border-[#2a3d5f] bg-[#15253d] px-3 py-1.5 text-[#6fb3ff] disabled:cursor-not-allowed disabled:opacity-60"
-                                                    disabled={connectMutation.isPending}
-                                                    onClick={() => connectMutation.mutate(String(post.user.id))}
-                                                >
-                                                    <UserPlus size={14} />
-                                                    Connect
-                                                </button>
-                                            ) : null}
-                                        </footer>
-                                    </article>
-                                ))
-                            )}
-                        </section>
-                        </div>
-                    </main>
-
-                    <aside className="sticky top-0 hidden h-screen w-[360px] overflow-hidden bg-[#0f182a] p-5 xl:block">
-                        <section className="rounded-3xl border border-[#23324d] bg-[#121d33] p-5">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-2xl font-semibold text-[#e6eeff]">
-                                    Suggested Connections
-                                </h3>
-                                <Link href="/search" className="text-sm font-semibold text-[#2b80e0]">
-                                    See All
-                                </Link>
-                            </div>
-                            <div className="space-y-4">
-                                {suggestions.map((person) => (
-                                    <div key={person.user.id} className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-3">
-                                            <Link href={`/profile/${person.user.id}`}>
-                                                <Avatar
-                                                    name={person.user.name || person.user.email}
-                                                    src={person.user.profileImage}
-                                                />
-                                            </Link>
-                                            <div>
-                                                <Link
-                                                    href={`/profile/${person.user.id}`}
-                                                    className="text-base font-semibold text-[#e6eeff] hover:text-[#6fb3ff]"
-                                                >
-                                                    {person.user.name || "Developer"}
-                                                </Link>
-                                                <p className="text-xs text-[#8ea4c8]">
-                                                    {person.user.professionalTitle || "Full-stack developer"}
-                                                </p>
-                                            </div>
+                                    <footer className="flex items-center justify-between pt-2 border-t border-[var(--app-line)] relative z-10">
+                                        <div className="flex items-center gap-4 text-xs font-bold text-[var(--app-muted)] tracking-wider">
+                                            <span>{post.attachments.length} ATTACHMENTS</span>
+                                            <span className="uppercase text-[var(--app-primary)]">{post.status}</span>
                                         </div>
-                                        <button
-                                            type="button"
-                                            className="rounded-lg border border-[#2a3d5f] bg-[#15253d] p-2 text-[#6fb3ff] disabled:cursor-not-allowed disabled:opacity-60"
-                                            disabled={
-                                                connectMutation.isPending ||
-                                                person.connectionStatus !== "none"
-                                            }
-                                            onClick={() => connectMutation.mutate(String(person.user.id))}
-                                        >
-                                            {person.connectionStatus === "none" ? (
-                                                <UserPlus size={14} />
-                                            ) : (
-                                                <span className="px-1 text-xs font-semibold">
-                                                    {person.connectionStatus === "pending"
-                                                        ? "Requested"
-                                                        : "Connected"}
-                                                </span>
-                                            )}
-                                        </button>
-                                    </div>
-                                ))}
-                                {suggestionsQuery.isLoading && suggestions.length === 0 ? (
-                                    <p className="text-sm text-[#8ea4c8]">Loading suggestions...</p>
-                                ) : null}
-                                {suggestionsQuery.isError && suggestions.length === 0 ? (
-                                    <p className="text-sm text-[#8ea4c8]">
-                                        Couldn&apos;t load explore users, showing feed suggestions when available.
-                                    </p>
-                                ) : null}
-                                {suggestions.length === 0 ? (
-                                    <p className="text-sm text-[#8ea4c8]">No suggestions right now.</p>
-                                ) : null}
-                            </div>
-                        </section>
-
-                        <section className="mt-4 rounded-3xl border border-[#23324d] bg-[#121d33] p-5">
-                            <h3 className="mb-4 text-2xl font-semibold text-[#e6eeff]">Trending Skills</h3>
-                            <div className="space-y-3">
-                                {trending.map((item) => (
-                                    <div key={item.name}>
-                                        <div className="mb-1 flex items-center justify-between text-sm">
-                                            <span className="font-medium text-[#c1d0e8]">{item.name}</span>
-                                            <span className="text-[#8ea4c8]">{item.count}</span>
-                                        </div>
-                                        <div className="h-1.5 rounded-full bg-[#21324d]">
-                                            <div
-                                                className={cn("h-1.5 rounded-full", item.width, item.color)}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="mt-4 rounded-3xl bg-gradient-to-br from-[#2e82e4] to-[#2b6bd6] p-6 text-white shadow-[0_10px_20px_rgba(45,128,224,0.25)]">
-                            <p className="text-xl font-semibold">Your Week</p>
-                            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                <div>
-                                    <p className="text-blue-100">Profile Views</p>
-                                    <p className="text-4xl font-bold">248</p>
-                                </div>
-                                <div>
-                                    <p className="text-blue-100">Post Reach</p>
-                                    <p className="text-4xl font-bold">1.2k</p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                className="mt-5 h-11 w-full rounded-xl bg-white/20 text-sm font-semibold"
-                            >
-                                View Analytics
-                            </button>
-                        </section>
-
-                        <footer className="mt-6 text-center text-xs text-[#8ea4c8]">
-                            <p>About Privacy Terms Help</p>
-                            <p className="mt-2">© 2024 DevConnect Inc.</p>
-                        </footer>
-                    </aside>
+                                        {post.user.connectionStatus !== "pending" && post.user.connectionStatus !== "connected" && !pendingConnectIds.includes(String(post.user.id)) && String(post.user.id) !== String(user?.id) && (
+                                            <Button
+                                                variant="outline" size="sm"
+                                                disabled={connectMutation.isPending}
+                                                onClick={() => connectMutation.mutate(String(post.user.id))}
+                                                className="border-[var(--app-primary-glow)] text-[var(--app-primary)] hover:bg-[var(--app-primary-soft)] gap-2 h-8"
+                                            >
+                                                <UserPlus size={14} /> Connect
+                                            </Button>
+                                        )}
+                                    </footer>
+                                </motion.article>
+                            ))}
+                            </motion.div>
+                        )}
+                    </section>
                 </div>
+
+                {/* Right Sidebar Column */}
+                <aside className="w-full xl:w-[380px] space-y-6">
+                    <section className="app-card p-6">
+                        <div className="mb-5 flex items-center justify-between">
+                            <h3 className="text-lg font-extrabold text-[var(--app-text)]">Network Suggestions</h3>
+                            <Link href="/search" className="text-xs font-bold text-[var(--app-primary)] hover:underline tracking-wider uppercase">See All</Link>
+                        </div>
+                        <motion.div className="space-y-4" variants={staggerList} initial="hidden" animate="show">
+                            {suggestions.map((person) => (
+                                <motion.div key={person.user.id} variants={fadeItem} className="flex items-center justify-between gap-3 p-3 rounded-[16px] hover:bg-[var(--app-surface-soft)] border border-transparent hover:border-[var(--app-line)] transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar name={person.user.name || person.user.email} src={person.user.profileImage} />
+                                        <div>
+                                            <Link href={`/profile/${person.user.id}`} className="text-sm font-bold text-[var(--app-text)] hover:text-[var(--app-primary)]">
+                                                {person.user.name || "Engineer"}
+                                            </Link>
+                                            <p className="text-[11px] text-[var(--app-muted)] truncate max-w-[120px]">
+                                                {person.user.professionalTitle || "Full-stack developer"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant={person.connectionStatus === "none" ? "outline" : "ghost"}
+                                        size="sm"
+                                        disabled={connectMutation.isPending || person.connectionStatus !== "none"}
+                                        onClick={() => connectMutation.mutate(String(person.user.id))}
+                                        className="h-8 w-8 p-0 rounded-full shrink-0 border-[var(--app-line)] text-[var(--app-primary)]"
+                                    >
+                                        {person.connectionStatus === "none" ? <UserPlus size={14} /> : <span className="text-[10px]">✓</span>}
+                                    </Button>
+                                </motion.div>
+                            ))}
+                            {suggestionsQuery.isLoading && <div className="text-center py-4 text-sm text-[var(--app-muted)] animate-pulse">Scanning network...</div>}
+                            {suggestions.length === 0 && !suggestionsQuery.isLoading && <div className="text-center py-4 text-sm text-[var(--app-muted)]">No connections found.</div>}
+                        </motion.div>
+                    </section>
+
+                    <section className="app-card p-6">
+                        <h3 className="mb-5 text-lg font-extrabold text-[var(--app-text)] flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-[var(--app-success)] shadow-glow animate-pulse"></span>
+                            Trending Tech Stack
+                        </h3>
+                        <motion.div className="space-y-4" variants={staggerList} initial="hidden" animate="show">
+                            {trending.map((item) => (
+                                <motion.div key={item.name} variants={fadeItem}>
+                                    <div className="mb-1.5 flex items-center justify-between text-xs font-bold">
+                                        <span className="text-[var(--app-text)]">{item.name}</span>
+                                        <span className="text-[var(--app-muted)]">{item.count}</span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-[var(--app-surface-soft)] overflow-hidden">
+                                        <motion.div
+                                            className={cn("h-full rounded-full", item.width, item.color)}
+                                            initial={{ scaleX: 0 }}
+                                            animate={{ scaleX: 1 }}
+                                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                                            style={{ originX: 0 }}
+                                        />
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </section>
+
+                    <section className="rounded-[24px] border border-[var(--app-primary-glow)] bg-gradient-to-br from-[var(--app-primary-strong)] to-[#1e3a8a] p-6 text-white shadow-glow relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[30px]" />
+                        <p className="text-lg font-bold drop-shadow-md">Telemetry</p>
+                        <div className="mt-5 grid grid-cols-2 gap-4">
+                            <div className="app-glass-strong p-3 rounded-xl border border-white/20">
+                                <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Views</p>
+                                <p className="text-3xl font-extrabold mt-1">248</p>
+                            </div>
+                            <div className="app-glass-strong p-3 rounded-xl border border-white/20">
+                                <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Reach</p>
+                                <p className="text-3xl font-extrabold mt-1">1.2k</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <footer className="text-center text-xs text-[var(--app-muted)] font-medium pt-4">
+                        <div className="flex justify-center gap-4 mb-2">
+                            <span className="hover:text-[var(--app-primary)] cursor-pointer">About</span>
+                            <span className="hover:text-[var(--app-primary)] cursor-pointer">Privacy</span>
+                            <span className="hover:text-[var(--app-primary)] cursor-pointer">Terms</span>
+                        </div>
+                        <p>© 2024 DevSkill Connect System</p>
+                    </footer>
+                </aside>
             </div>
-        </ProtectedRoute>
+        </DashboardLayout>
     );
 }

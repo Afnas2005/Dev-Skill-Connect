@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, Sora } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import { PageTransition } from "@/components/motion/page-transition";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
 });
 
@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-[#171d2a] text-[#e4ebf7] antialiased selection:bg-[#2a3448] flex flex-col`}
+        className={`${dmSans.variable} ${sora.variable} min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] antialiased selection:bg-[#dbeafe] selection:text-[#0f172a] flex flex-col`}
       >
         <Providers>
           <main className="flex-1 flex flex-col">

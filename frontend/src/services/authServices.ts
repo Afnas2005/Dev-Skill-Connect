@@ -23,7 +23,7 @@ export type ProfilePayload = {
 
 export type AuthResult = {
     user: AuthUser;
-    token: string;
+    accessToken: string;
 };
 
 export const registerUser = async (data: RegisterPayload) => {
@@ -48,6 +48,11 @@ export const getMe = async () => {
 
 export const logoutUser = async () => {
     const response = await api.post<ApiResponse<null>>("/auth/logout");
+    return response;
+};
+
+export const refreshSession = async () => {
+    const response = await api.post<ApiResponse<AuthResult>>("/auth/refresh");
     return response;
 };
 

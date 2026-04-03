@@ -2,11 +2,11 @@
   "name": "devskill-connect-backend",
   "version": "1.0.0",
   "description": "DevSkill Connect Backend",
-  "main": "server.ts",
+  "main": "dist/src/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "seed:sample": "npm run build && node dist/scripts/seedSampleData.js"
   },
   "dependencies": {
@@ -21,7 +21,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.1.0",
     "mongoose": "^9.2.3",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

@@ -7,13 +7,13 @@ const path_1 = __importDefault(require("path"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const db_1 = require("../config/db");
-const User_1 = __importDefault(require("../models/User"));
-const Skill_1 = __importDefault(require("../models/Skill"));
-const Post_1 = __importDefault(require("../models/Post"));
-const Setting_1 = __importDefault(require("../models/Setting"));
-const Notification_1 = __importDefault(require("../models/Notification"));
-const ConnectionRequest_1 = __importDefault(require("../models/ConnectionRequest"));
+const db_1 = require("../src/config/db");
+const User_1 = __importDefault(require("../src/models/User"));
+const Skill_1 = __importDefault(require("../src/models/Skill"));
+const Post_1 = __importDefault(require("../src/models/Post"));
+const Setting_1 = __importDefault(require("../src/models/Setting"));
+const Notification_1 = __importDefault(require("../src/models/Notification"));
+const ConnectionRequest_1 = __importDefault(require("../src/models/ConnectionRequest"));
 const dotenvPaths = [
     path_1.default.resolve(process.cwd(), ".env"),
     path_1.default.resolve(__dirname, "../.env"),
